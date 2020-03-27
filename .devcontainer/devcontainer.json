@@ -1,0 +1,17 @@
+{
+	"name": "ROS",
+	"dockerComposeFile": [
+		"../docker/docker-compose.yml"
+	],
+	"service": "workspace",
+	"workspaceFolder": "/workspace",
+	"shutdownAction": "stopCompose",
+	"extensions": [
+		"ms-vscode.cpptools",
+		"ms-python.python",
+		"ajshort.msg",
+		"twxs.cmake",
+		"redhat.vscode-xml"
+	],
+	"remoteUser": "user"
+}

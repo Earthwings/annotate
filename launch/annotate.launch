@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<launch>
+	<arg name="labels" default="person,car,truck,bus,train,motorcycle,bicycle" />
+	<node name="annotate" pkg="annotate" type="annotate_node" output="screen">
+		<param name="labels" value="$(arg labels)" />
+	</node>
+</launch>

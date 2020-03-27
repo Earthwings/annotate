@@ -1,0 +1,9 @@
+<library path="lib/libannotate_tool">
+  <class name="annotate/New Annotation"
+         type="annotate::AnnotateTool"
+         base_class_type="rviz::Tool">
+    <description>
+      Tool for creating labelled 3D box annotations in rviz.
+    </description>
+  </class>
+</library>

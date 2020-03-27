@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>annotate</name>
+  <version>1.0.0</version>
+  <description>Create 3D labelled bounding boxes in RViz</description>
+
+  <author email="dennis@nienhueser.de">Dennis Nienhüser</author>
+  <maintainer email="dennis@nienhueser.de">Dennis Nienhüser</maintainer>
+  <license>BSD-3</license>
+  <url type="website">https://github.com/Earthwings/annotate</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>qtbase5-dev</build_depend>
+  <exec_depend>libqt5-core</exec_depend>
+  <exec_depend>libqt5-gui</exec_depend>
+  <exec_depend>libqt5-widgets</exec_depend>
+  <depend>rviz</depend>
+  <depend>geometry_msgs</depend>
+  <depend>interactive_markers</depend>
+  <depend>roscpp</depend>
+  <depend>visualization_msgs</depend>
+  <depend>tf</depend>
+
+  <export>
+    <rviz plugin="${prefix}/plugin_description.xml"/>
+  </export>
+</package>
