@@ -7,17 +7,42 @@
 #include <geometry_msgs/PointStamped.h>
 #include <interactive_markers/menu_handler.h>
 #include <memory>
+#include <sensor_msgs/PointCloud2.h>
+#include <tf/transform_broadcaster.h>
 
 namespace annotate
 {
+struct BoxSize
+{
+  double length{ 0.0 };
+  double width{ 0.0 };
+  double height{ 0.0 };
+};
+
+struct TrackInstance
+{
+  std::string label;
+  tf::StampedTransform center;
+  BoxSize box;
+};
+
+using Track = std::vector<TrackInstance>;
+
+class Markers;
+
 class AnnotationMarker
 {
 public:
   using Ptr = std::shared_ptr<AnnotationMarker>;
 
-  AnnotationMarker(const std::shared_ptr<interactive_markers::InteractiveMarkerServer>& server,
-                   const tf::Vector3& position, const std::string& frame_id, int marker_id,
-                   const std::vector<std::string>& labels);
+  AnnotationMarker(Markers* markers, const std::shared_ptr<interactive_markers::InteractiveMarkerServer>& server,
+                   const TrackInstance& trackInstance, int marker_id, const std::vector<std::string>& labels);
+
+  int id() const;
+  Track const& track() const;
+  void setTrack(const Track& track);
+
+  void setTime(const ros::Time& time);
 
 private:
   enum Mode
@@ -36,9 +61,11 @@ private:
   void changeScale(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void changePosition();
   void changePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-  void createMarker(const tf::Vector3& position, const std::string& frame_id);
+  void createMarker(const TrackInstance& instance);
   void addMarker(visualization_msgs::InteractiveMarker& int_marker);
   void setLabel(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void commit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void updateDescription(visualization_msgs::InteractiveMarker &marker) const;
 
   interactive_markers::MenuHandler menu_handler_;
   std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
@@ -50,21 +77,34 @@ private:
   std::string name_;
   std::map<interactive_markers::MenuHandler::EntryHandle, std::string> labels_;
   std::string label_;
+  Track track_;
+  Markers* markers_;
+  ros::Time time_;
+  tf::TransformBroadcaster tf_broadcaster_;
 };
 
 class Markers
 {
 public:
   Markers();
+  void save() const;
+  void publishTrackMarkers();
 
 private:
+  void load();
   void createNewAnnotation(const geometry_msgs::PointStamped::ConstPtr& message);
+  void handlePointcloud(const sensor_msgs::PointCloud2ConstPtr& cloud);
 
   ros::NodeHandle node_handle_;
-  ros::Subscriber subscriber_;
+  ros::Subscriber new_annotation_subscriber_;
+  ros::Subscriber pointcloud_subscriber_;
+  ros::Publisher track_marker_publisher_;
   std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
   size_t current_marker_id_{ 0 };
   std::vector<AnnotationMarker::Ptr> markers_;
   std::vector<std::string> labels_;
+  std::string filename_;
+  ros::Time time_;
+  ros::Time last_track_publish_time_;
 };
 }  // namespace annotate

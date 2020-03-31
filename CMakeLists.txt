@@ -41,9 +41,7 @@ ${rviz_INCLUDE_DIRS}
 )
 
 add_executable(${PROJECT_NAME}_node src/${PROJECT_NAME}_node.cpp)
-target_link_libraries(${PROJECT_NAME}_node
-   ${catkin_LIBRARIES}
-)
+target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES} yaml-cpp)
 
 set(CMAKE_AUTOMOC ON)
 find_package(Qt5 ${rviz_QT_VERSION} REQUIRED Core Widgets)

@@ -1,5 +1,8 @@
 #include <annotate/annotate_node.h>
 #include <sstream>
+#include <yaml-cpp/yaml.h>
+#include <fstream>
+#include <visualization_msgs/MarkerArray.h>
 
 using namespace visualization_msgs;
 using namespace interactive_markers;
@@ -25,6 +28,32 @@ Marker createCube(float scale)
   marker.scale.z = scale;
   marker.color.r = 0.5;
   marker.color.g = 0.5;
+  marker.color.b = 0.5;
+  marker.color.a = 0.8;
+  return marker;
+}
+
+Marker createTrackLine(float scale)
+{
+  Marker marker;
+  marker.type = Marker::LINE_STRIP;
+  marker.scale.x = scale;
+  marker.color.r = 0.5;
+  marker.color.g = 1.0;
+  marker.color.b = 0.5;
+  marker.color.a = 0.8;
+  return marker;
+}
+
+Marker createTrackSpheres(float scale)
+{
+  Marker marker;
+  marker.type = Marker::SPHERE_LIST;
+  marker.scale.x = scale;
+  marker.scale.y = scale;
+  marker.scale.z = scale;
+  marker.color.r = 0.5;
+  marker.color.g = 1.0;
   marker.color.b = 0.5;
   marker.color.a = 0.8;
   return marker;
@@ -88,9 +117,10 @@ void createScaleControl(InteractiveMarker& marker)
 
 }  // namespace internal
 
-AnnotationMarker::AnnotationMarker(const shared_ptr<InteractiveMarkerServer>& server, const Vector3& position,
-                                   const string& frame_id, int marker_id, const std::vector<std::string>& labels)
-  : server_(server), id_(marker_id)
+AnnotationMarker::AnnotationMarker(Markers* markers, const shared_ptr<InteractiveMarkerServer>& server,
+                                   const TrackInstance& trackInstance, int marker_id,
+                                   const std::vector<std::string>& labels)
+  : server_(server), id_(marker_id), markers_(markers)
 {
   MenuHandler::EntryHandle mode_menu = menu_handler_.insert("Mode");
   menu_handler_.insert(mode_menu, "Locked", boost::bind(&AnnotationMarker::lock, this, _1));
@@ -107,7 +137,10 @@ AnnotationMarker::AnnotationMarker(const shared_ptr<InteractiveMarkerServer>& se
     }
   }
 
-  createMarker(position, frame_id);
+  menu_handler_.insert("Commit", boost::bind(&AnnotationMarker::commit, this, _1));
+
+  time_ = trackInstance.center.stamp_;
+  createMarker(trackInstance);
   server_->applyChanges();
 }
 
@@ -118,8 +151,6 @@ void AnnotationMarker::processFeedback(const InteractiveMarkerFeedbackConstPtr& 
     case InteractiveMarkerFeedback::BUTTON_CLICK:
       nextMode();
       return;
-      break;
-    case InteractiveMarkerFeedback::MENU_SELECT:
       break;
     case InteractiveMarkerFeedback::MOUSE_DOWN:
       if (mode_ == Scale && feedback->mouse_point_valid)
@@ -188,6 +219,7 @@ void AnnotationMarker::nextMode()
       changePosition();
       break;
     case Move:
+      can_change_size_ = false;
       changeScale();
       break;
     case Scale:
@@ -196,20 +228,38 @@ void AnnotationMarker::nextMode()
   }
 }
 
-void AnnotationMarker::createMarker(const Vector3& position, const string& frame_id)
+void AnnotationMarker::createMarker(const TrackInstance& instance)
 {
-  InteractiveMarker int_marker;
-  int_marker.header.frame_id = frame_id;
-  pointTFToMsg(position, int_marker.pose.position);
-  int_marker.scale = 1;
+  InteractiveMarker marker;
+  marker.header.frame_id = instance.center.frame_id_;
+  marker.header.stamp = time_;
+  auto const center = instance.center.getOrigin();
+  marker.pose.position.x = center.x();
+  marker.pose.position.y = center.y();
+  marker.pose.position.z = center.z();
+  marker.scale = 1;
 
   name_ = string("annotation_") + to_string(id_);
-  int_marker.name = name_;
-  int_marker.description = "Annotation #" + to_string(id_);
+  marker.name = name_;
+  updateDescription(marker);
 
-  internal::createCubeControl(int_marker);
-  internal::createPositionControl(int_marker);
-  addMarker(int_marker);
+  internal::createCubeControl(marker);
+  internal::createPositionControl(marker);
+  addMarker(marker);
+}
+
+void AnnotationMarker::updateDescription(visualization_msgs::InteractiveMarker& marker) const
+{
+  stringstream stream;
+  stream << label_ << " #" << id_;
+  if (!marker.controls.empty() && !marker.controls.front().markers.empty())
+  {
+    auto const& box = marker.controls.front().markers.front();
+    stream << "\n" << setiosflags(ios::fixed) << setprecision(2) << box.scale.x;
+    stream << " x " << setiosflags(ios::fixed) << setprecision(2) << box.scale.y;
+    stream << " x " << setiosflags(ios::fixed) << setprecision(2) << box.scale.z;
+  }
+  marker.description = stream.str();
 }
 
 void AnnotationMarker::changePosition()
@@ -268,25 +318,144 @@ void AnnotationMarker::setLabel(const visualization_msgs::InteractiveMarkerFeedb
     if (server_->get(name_, marker))
     {
       label_ = labels_[feedback->menu_entry_id];
-      marker.description = label_ + string(" #") + to_string(id_);
+      updateDescription(marker);
       addMarker(marker);
     }
   }
 }
 
+void AnnotationMarker::commit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+{
+  if (feedback->event_type == InteractiveMarkerFeedback::MENU_SELECT)
+  {
+    InteractiveMarker marker;
+    if (server_->get(name_, marker))
+    {
+      TrackInstance instance;
+      instance.label = label_;
+
+      tf::Transform transform;
+      tf::poseMsgToTF(marker.pose, transform);
+      instance.center = StampedTransform(transform, time_, marker.header.frame_id, "current_annotation");
+
+      if (!marker.controls.empty() && !marker.controls.front().markers.empty())
+      {
+        auto& box = marker.controls.front().markers.front();
+        instance.box.length = box.scale.x;
+        instance.box.width = box.scale.y;
+        instance.box.height = box.scale.z;
+
+        box.color.r = 0.2;
+        box.color.g = 1.0;
+        box.color.b = 0.2;
+        box.color.a = 0.8;
+      }
+
+      tf_broadcaster_.sendTransform(instance.center);
+
+      track_.erase(std::remove_if(track_.begin(), track_.end(),
+                                  [this](const TrackInstance& t) { return t.center.stamp_ == time_; }),
+                   track_.end());
+      track_.push_back(instance);
+      sort(track_.begin(), track_.end(),
+           [](TrackInstance const& a, TrackInstance const& b) -> bool { return a.center.stamp_ < b.center.stamp_; });
+      markers_->save();
+      markers_->publishTrackMarkers();
+      addMarker(marker);
+    }
+  }
+}
+
+int AnnotationMarker::id() const
+{
+  return id_;
+}
+
+Track const& AnnotationMarker::track() const
+{
+  return track_;
+}
+
+void AnnotationMarker::setTime(const ros::Time& time)
+{
+  time_ = time;
+  InteractiveMarker marker;
+  if (server_->get(name_, marker))
+  {
+    marker.header.stamp = time;
+
+    for (auto const& instance : track_)
+    {
+      auto const diff = instance.center.stamp_ - time;
+      if (fabs(diff.toSec()) < 0.01)
+      {
+        label_ = instance.label;
+        updateDescription(marker);
+
+        poseTFToMsg(instance.center, marker.pose);
+
+        if (!marker.controls.empty() && !marker.controls.front().markers.empty())
+        {
+          auto& box = marker.controls.front().markers.front();
+          box.scale.x = instance.box.length;
+          box.scale.y = instance.box.width;
+          box.scale.z = instance.box.height;
+          box.color.r = 0.2;
+          box.color.g = 1.0;
+          box.color.b = 0.2;
+          box.color.a = 0.8;
+        }
+        addMarker(marker);
+        return;
+      }
+    }
+
+    if (!marker.controls.empty() && !marker.controls.front().markers.empty())
+    {
+      auto& box = marker.controls.front().markers.front();
+      box.color.r = 0.5;
+      box.color.g = 0.5;
+      box.color.b = 0.5;
+      box.color.a = 0.8;
+    }
+    addMarker(marker);
+  }
+}
+
+void AnnotationMarker::setTrack(const Track& track)
+{
+  track_ = track;
+}
+
 void Markers::createNewAnnotation(const geometry_msgs::PointStamped::ConstPtr& message)
 {
-  Vector3 const position(message->point.x, message->point.y, message->point.z);
+  tf::Transform transform;
+  transform.setOrigin({ message->point.x, message->point.y, message->point.z });
+  TrackInstance instance;
+  instance.center = StampedTransform(transform, time_, message->header.frame_id, "current_annotation");
+  instance.label = "unknown";
+  instance.box.length = 1.0;
+  instance.box.width = 1.0;
+  instance.box.height = 1.0;
   ++current_marker_id_;
-  auto marker = make_shared<AnnotationMarker>(server_, position, message->header.frame_id, current_marker_id_, labels_);
+  auto marker = make_shared<AnnotationMarker>(this, server_, instance, current_marker_id_, labels_);
   markers_.push_back(marker);
+}
+
+void Markers::handlePointcloud(const sensor_msgs::PointCloud2ConstPtr& cloud)
+{
+  time_ = cloud->header.stamp;
+  for (auto& marker : markers_)
+  {
+    marker->setTime(time_);
+  }
 }
 
 Markers::Markers()
 {
   ros::NodeHandle private_node_handle("~");
   auto const labels = private_node_handle.param<string>("labels", "object");
-  std::cout << "Configured labels: " << labels << std::endl;
+  filename_ = private_node_handle.param<string>("filename", "annotate.yaml");
 
   istringstream stream(labels);
   string value;
@@ -296,7 +465,156 @@ Markers::Markers()
   }
 
   server_ = make_shared<InteractiveMarkerServer>("annotate_node", "", false);
-  subscriber_ = node_handle_.subscribe("/new_annotation", 10, &Markers::createNewAnnotation, this);
+  track_marker_publisher_ = node_handle_.advertise<visualization_msgs::MarkerArray>("tracks", 10, true);
+  load();
+  new_annotation_subscriber_ = node_handle_.subscribe("/new_annotation", 10, &Markers::createNewAnnotation, this);
+  auto const pointcloud_topic = private_node_handle.param<string>("pointcloud_topic", "/velodyne_points");
+  pointcloud_subscriber_ = node_handle_.subscribe(pointcloud_topic, 10, &Markers::handlePointcloud, this);
+  publishTrackMarkers();
+}
+
+void Markers::load()
+{
+  using namespace YAML;
+  Node node;
+  try
+  {
+    node = LoadFile(filename_);
+  }
+  catch (Exception const& e)
+  {
+    ROS_DEBUG_STREAM("Failed to open " << filename_ << ": " << e.msg);
+    return;
+  }
+  Node tracks = node["tracks"];
+  for (size_t i = 0; i < tracks.size(); ++i)
+  {
+    Track track;
+    Node annotation = tracks[i];
+    auto const id = annotation["id"].as<size_t>();
+    Node t = annotation["track"];
+    for (size_t j = 0; j < t.size(); ++j)
+    {
+      Node inst = t[j];
+      TrackInstance instance;
+      instance.label = inst["label"].as<string>();
+
+      Node header = inst["header"];
+      instance.center.frame_id_ = header["frame_id"].as<string>();
+      instance.center.stamp_.sec = header["stamp"]["secs"].as<uint32_t>();
+      instance.center.stamp_.nsec = header["stamp"]["nsecs"].as<uint32_t>();
+
+      Node origin = inst["translation"];
+      instance.center.setOrigin({ origin["x"].as<double>(), origin["y"].as<double>(), origin["z"].as<double>() });
+      Node rotation = inst["rotation"];
+      instance.center.setRotation({ rotation["x"].as<double>(), rotation["y"].as<double>(), rotation["z"].as<double>(),
+                                    rotation["w"].as<double>() });
+
+      Node box = inst["box"];
+      instance.box.length = box["length"].as<double>();
+      instance.box.width = box["width"].as<double>();
+      instance.box.height = box["height"].as<double>();
+
+      track.push_back(instance);
+    }
+
+    if (!track.empty())
+    {
+      current_marker_id_ = max(current_marker_id_, id);
+      auto marker = make_shared<AnnotationMarker>(this, server_, track.front(), id, labels_);
+      marker->setTrack(track);
+      markers_.push_back(marker);
+    }
+  }
+}
+
+void Markers::save() const
+{
+  using namespace YAML;
+  Node node;
+  for (auto const& marker : markers_)
+  {
+    Node annotation;
+    annotation["id"] = marker->id();
+    for (auto const& instance : marker->track())
+    {
+      Node i;
+      i["label"] = instance.label;
+
+      Node header;
+      header["frame_id"] = instance.center.frame_id_;
+      Node stamp;
+      stamp["secs"] = instance.center.stamp_.sec;
+      stamp["nsecs"] = instance.center.stamp_.nsec;
+      header["stamp"] = stamp;
+      i["header"] = header;
+
+      Node origin;
+      auto const o = instance.center.getOrigin();
+      origin["x"] = o.x();
+      origin["y"] = o.y();
+      origin["z"] = o.z();
+      i["translation"] = origin;
+
+      Node rotation;
+      auto const q = instance.center.getRotation();
+      rotation["x"] = q.x();
+      rotation["y"] = q.y();
+      rotation["z"] = q.z();
+      rotation["w"] = q.w();
+      i["rotation"] = rotation;
+
+      Node box;
+      box["length"] = instance.box.length;
+      box["width"] = instance.box.width;
+      box["height"] = instance.box.height;
+      i["box"] = box;
+
+      annotation["track"].push_back(i);
+    }
+    node["tracks"].push_back(annotation);
+  }
+
+  ofstream stream(filename_);
+  stream << node;
+}
+
+void Markers::publishTrackMarkers()
+{
+  visualization_msgs::MarkerArray message;
+
+  Marker delete_all;
+  delete_all.action = Marker::DELETEALL;
+  message.markers.push_back(delete_all);
+
+  for (auto const& marker : markers_)
+  {
+    Marker line = internal::createTrackLine(0.02);
+    line.id = marker->id();
+    line.ns = "Path";
+    Marker dots = internal::createTrackSpheres(0.1);
+    dots.id = marker->id() << 16;
+    dots.ns = "Positions";
+
+    for (auto const& instance : marker->track())
+    {
+      geometry_msgs::Point point;
+      auto const p = instance.center.getOrigin();
+      pointTFToMsg(p, point);
+      point.z = 0.0;  // attach to ground
+      line.points.push_back(point);
+      line.header.frame_id = instance.center.frame_id_;
+      dots.points.push_back(point);
+      dots.header.frame_id = instance.center.frame_id_;
+    }
+
+    line.action = line.points.empty() ? Marker::DELETE : Marker::ADD;
+    message.markers.push_back(line);
+    dots.action = dots.points.empty() ? Marker::DELETE : Marker::ADD;
+    message.markers.push_back(dots);
+  }
+
+  track_marker_publisher_.publish(message);
 }
 
 }  // namespace annotate
