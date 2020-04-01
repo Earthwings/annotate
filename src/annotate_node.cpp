@@ -219,6 +219,7 @@ void AnnotationMarker::changeSize(const Pose& new_pose)
       Pose new_center = new_pose;
       new_center.setOrigin(last_pose_ * (0.5 * diff));
       poseTFToMsg(new_center, marker.pose);
+      updateState(Modified, marker);
       updateDescription(marker);
       addMarker(marker);
     }
@@ -339,9 +340,13 @@ void AnnotationMarker::setLabel(const visualization_msgs::InteractiveMarkerFeedb
     InteractiveMarker marker;
     if (server_->get(name_, marker))
     {
-      label_ = labels_[feedback->menu_entry_id];
-      updateDescription(marker);
-      addMarker(marker);
+      if (label_ != labels_[feedback->menu_entry_id])
+      {
+        label_ = labels_[feedback->menu_entry_id];
+        updateDescription(marker);
+        updateState(Modified, marker);
+        addMarker(marker);
+      }
     }
   }
 }
@@ -415,6 +420,7 @@ void AnnotationMarker::shrink(const visualization_msgs::InteractiveMarkerFeedbac
                                margin + box_max.z - box_min.z);
         internal::setBoxSize(marker, box.scale, shrinked);
         updateDescription(marker);
+        updateState(Modified, marker);
         addMarker(marker);
       }
     }
@@ -437,6 +443,7 @@ void AnnotationMarker::expand(const visualization_msgs::InteractiveMarkerFeedbac
         auto& box = marker.controls.front().markers.front();
         internal::setBoxSize(marker, box.scale, BoxSize(box.scale.x * 1.1, box.scale.y * 1.1, box.scale.z * 1.1));
         updateDescription(marker);
+        updateState(Modified, marker);
         addMarker(marker);
       }
     }
@@ -463,11 +470,6 @@ void AnnotationMarker::commit(const visualization_msgs::InteractiveMarkerFeedbac
         instance.box.length = box.scale.x;
         instance.box.width = box.scale.y;
         instance.box.height = box.scale.z;
-
-        box.color.r = 0.2;
-        box.color.g = 1.0;
-        box.color.b = 0.2;
-        box.color.a = 0.8;
       }
 
       tf_broadcaster_.sendTransform(instance.center);
@@ -476,11 +478,45 @@ void AnnotationMarker::commit(const visualization_msgs::InteractiveMarkerFeedbac
                                   [this](const TrackInstance& t) { return t.center.stamp_ == time_; }),
                    track_.end());
       track_.push_back(instance);
+      updateState(Committed, marker);
       sort(track_.begin(), track_.end(),
            [](TrackInstance const& a, TrackInstance const& b) -> bool { return a.center.stamp_ < b.center.stamp_; });
       markers_->save();
       markers_->publishTrackMarkers();
       addMarker(marker);
+    }
+  }
+}
+
+void AnnotationMarker::updateState(State state, visualization_msgs::InteractiveMarker& marker)
+{
+  if (state_ == state)
+  {
+    return;
+  }
+
+  state_ = state;
+  if (!marker.controls.empty() && !marker.controls.front().markers.empty())
+  {
+    auto& box = marker.controls.front().markers.front();
+
+    switch (state_)
+    {
+      case New:
+        box.color.r = 0.5;
+        box.color.g = 0.5;
+        box.color.b = 0.5;
+        break;
+      case Committed:
+        box.color.r = 60 / 255.0;
+        box.color.g = 180 / 255.0;
+        box.color.b = 75 / 255.0;
+        break;
+      case Modified:
+        box.color.r = 245 / 255.0;
+        box.color.g = 130 / 255.0;
+        box.color.b = 48 / 255.0;
+        break;
     }
   }
 }
@@ -510,31 +546,20 @@ void AnnotationMarker::setTime(const ros::Time& time)
       {
         label_ = instance.label;
         updateDescription(marker);
-
+        updateState(Committed, marker);
         poseTFToMsg(instance.center, marker.pose);
 
         if (!marker.controls.empty() && !marker.controls.front().markers.empty())
         {
           auto& box = marker.controls.front().markers.front();
           internal::setBoxSize(marker, box.scale, instance.box);
-          box.color.r = 0.2;
-          box.color.g = 1.0;
-          box.color.b = 0.2;
-          box.color.a = 0.8;
         }
         addMarker(marker);
         return;
       }
     }
 
-    if (!marker.controls.empty() && !marker.controls.front().markers.empty())
-    {
-      auto& box = marker.controls.front().markers.front();
-      box.color.r = 0.5;
-      box.color.g = 0.5;
-      box.color.b = 0.5;
-      box.color.a = 0.8;
-    }
+    updateState(New, marker);
     addMarker(marker);
   }
 }

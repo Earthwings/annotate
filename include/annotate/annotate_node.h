@@ -54,6 +54,13 @@ private:
     Scale
   };
 
+  enum State
+  {
+    New,
+    Committed,
+    Modified
+  };
+
   void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void nextMode();
   void changeSize(const tf::Pose& new_pose);
@@ -68,6 +75,7 @@ private:
   void setLabel(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void commit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void updateDescription(visualization_msgs::InteractiveMarker& marker) const;
+  void updateState(State state, visualization_msgs::InteractiveMarker& marker);
   void expand(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void shrink(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
 
@@ -85,6 +93,7 @@ private:
   Markers* markers_;
   ros::Time time_;
   tf::TransformBroadcaster tf_broadcaster_;
+  State state_{ New };
 };
 
 class Markers
@@ -94,7 +103,7 @@ public:
   void save() const;
   void publishTrackMarkers();
   sensor_msgs::PointCloud2ConstPtr cloud() const;
-  tf::TransformListener & transformListener();
+  tf::TransformListener& transformListener();
 
 private:
   void load();
