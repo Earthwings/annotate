@@ -10,6 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(catkin REQUIRED COMPONENTS
 geometry_msgs
 interactive_markers
+pcl_conversions
+pcl_ros
 roscpp
 rviz
 tf
@@ -25,6 +27,8 @@ INCLUDE_DIRS include
 CATKIN_DEPENDS
 geometry_msgs
 interactive_markers
+pcl_conversions
+pcl_ros
 roscpp
 rviz
 tf

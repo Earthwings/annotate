@@ -9,11 +9,13 @@
 #include <memory>
 #include <sensor_msgs/PointCloud2.h>
 #include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 
 namespace annotate
 {
 struct BoxSize
 {
+  explicit BoxSize(double length = 0.0, double width = 0.0, double height = 0.0);
   double length{ 0.0 };
   double width{ 0.0 };
   double height{ 0.0 };
@@ -65,7 +67,9 @@ private:
   void addMarker(visualization_msgs::InteractiveMarker& int_marker);
   void setLabel(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void commit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-  void updateDescription(visualization_msgs::InteractiveMarker &marker) const;
+  void updateDescription(visualization_msgs::InteractiveMarker& marker) const;
+  void expand(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void shrink(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
 
   interactive_markers::MenuHandler menu_handler_;
   std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
@@ -89,6 +93,8 @@ public:
   Markers();
   void save() const;
   void publishTrackMarkers();
+  sensor_msgs::PointCloud2ConstPtr cloud() const;
+  tf::TransformListener & transformListener();
 
 private:
   void load();
@@ -106,5 +112,7 @@ private:
   std::string filename_;
   ros::Time time_;
   ros::Time last_track_publish_time_;
+  sensor_msgs::PointCloud2ConstPtr cloud_;
+  tf::TransformListener transform_listener_;
 };
 }  // namespace annotate

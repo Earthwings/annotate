@@ -3,6 +3,11 @@
 #include <yaml-cpp/yaml.h>
 #include <fstream>
 #include <visualization_msgs/MarkerArray.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl_ros/point_cloud.h>
+#include <pcl_ros/transforms.h>
 
 using namespace visualization_msgs;
 using namespace interactive_markers;
@@ -115,7 +120,20 @@ void createScaleControl(InteractiveMarker& marker)
   marker.controls.push_back(control);
 }
 
+void setBoxSize(InteractiveMarker& marker, geometry_msgs::Vector3& scale, const BoxSize& box_size)
+{
+  scale.x = box_size.length;
+  scale.y = box_size.width;
+  scale.z = box_size.height;
+  marker.scale = 0.2 + max(scale.x, max(scale.y, scale.z));
+}
+
 }  // namespace internal
+
+BoxSize::BoxSize(double length, double width, double height) : length(length), width(width), height(height)
+{
+  // does nothing
+}
 
 AnnotationMarker::AnnotationMarker(Markers* markers, const shared_ptr<InteractiveMarkerServer>& server,
                                    const TrackInstance& trackInstance, int marker_id,
@@ -137,7 +155,11 @@ AnnotationMarker::AnnotationMarker(Markers* markers, const shared_ptr<Interactiv
     }
   }
 
-  menu_handler_.insert("Commit", boost::bind(&AnnotationMarker::commit, this, _1));
+  MenuHandler::EntryHandle edit_menu = menu_handler_.insert("Edit");
+
+  menu_handler_.insert(edit_menu, "Expand Box", boost::bind(&AnnotationMarker::expand, this, _1));
+  menu_handler_.insert(edit_menu, "Shrink to Points", boost::bind(&AnnotationMarker::shrink, this, _1));
+  menu_handler_.insert(edit_menu, "Commit", boost::bind(&AnnotationMarker::commit, this, _1));
 
   time_ = trackInstance.center.stamp_;
   createMarker(trackInstance);
@@ -193,11 +215,11 @@ void AnnotationMarker::changeSize(const Pose& new_pose)
       Vector3 scale;
       vector3MsgToTF(box.scale, scale);
       scale.m_floats[max_component] = max(0.05, scale[max_component] + change);
-      vector3TFToMsg(scale, box.scale);
-      marker.scale = 0.2 + max(box.scale.x, max(box.scale.y, box.scale.z));
+      internal::setBoxSize(marker, box.scale, BoxSize(scale.x(), scale.y(), scale.z()));
       Pose new_center = new_pose;
       new_center.setOrigin(last_pose_ * (0.5 * diff));
       poseTFToMsg(new_center, marker.pose);
+      updateDescription(marker);
       addMarker(marker);
     }
   }
@@ -324,6 +346,103 @@ void AnnotationMarker::setLabel(const visualization_msgs::InteractiveMarkerFeedb
   }
 }
 
+void AnnotationMarker::shrink(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+{
+  InteractiveMarker marker;
+  if (server_->get(name_, marker))
+  {
+    tf::Transform transform;
+    tf::poseMsgToTF(marker.pose, transform);
+    auto const stamped_transform = StampedTransform(transform, time_, marker.header.frame_id, "current_annotation");
+
+    auto const cloud = markers_->cloud();
+    auto& transform_listener = markers_->transformListener();
+    transform_listener.setTransform(stamped_transform);
+    string error;
+    if (transform_listener.canTransform("current_annotation", cloud->header.frame_id, cloud->header.stamp, &error))
+    {
+      tf::StampedTransform trafo;
+      transform_listener.lookupTransform("current_annotation", cloud->header.frame_id, cloud->header.stamp, trafo);
+      pcl::PointCloud<pcl::PointXYZ> pointcloud;
+      pcl::fromROSMsg(*cloud, pointcloud);
+      if (pointcloud.points.empty())
+      {
+        return;
+      }
+      pcl::PointCloud<pcl::PointXYZ> annotation_cloud;
+      pcl_ros::transformPointCloud(pointcloud, annotation_cloud, trafo);
+      pcl::PointXYZ box_min(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
+      pcl::PointXYZ box_max(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
+      if (!marker.controls.empty() && !marker.controls.front().markers.empty())
+      {
+        auto& box = marker.controls.front().markers.front();
+        double const x_min = -0.5 * box.scale.x;
+        double const x_max = -x_min;
+        double const y_min = -0.5 * box.scale.y;
+        double const y_max = -y_min;
+        double const z_min = -0.5 * box.scale.z;
+        double const z_max = -z_min;
+        size_t inside(0);
+        size_t outside(0);
+        for (auto const& point : annotation_cloud.points)
+        {
+          if (point.x >= x_min && point.x <= x_max && point.y >= y_min && point.y <= y_max && point.z >= z_min &&
+              point.z <= z_max)
+          {
+            ++inside;
+            box_min.x = min(box_min.x, point.x);
+            box_min.y = min(box_min.y, point.y);
+            box_min.z = min(box_min.z, point.z);
+            box_max.x = max(box_max.x, point.x);
+            box_max.y = max(box_max.y, point.y);
+            box_max.z = max(box_max.z, point.z);
+          }
+          else
+          {
+            ++outside;
+          }
+        }
+
+        Stamped<tf::Point> input(0.5 * tf::Point(box_max.x + box_min.x, box_max.y + box_min.y, box_max.z + box_min.z),
+                                 cloud->header.stamp, "current_annotation");
+        Stamped<tf::Point> output;
+        transform_listener.transformPoint(marker.header.frame_id, input, output);
+        marker.pose.position.x = output.x();
+        marker.pose.position.y = output.y();
+        marker.pose.position.z = output.z();
+        double const margin = 0.05;
+        BoxSize const shrinked(margin + box_max.x - box_min.x, margin + box_max.y - box_min.y,
+                               margin + box_max.z - box_min.z);
+        internal::setBoxSize(marker, box.scale, shrinked);
+        updateDescription(marker);
+        addMarker(marker);
+      }
+    }
+    else
+    {
+      ROS_WARN_STREAM("Transformation failed: " << error);
+    }
+  }
+}
+
+void AnnotationMarker::expand(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+{
+  if (feedback->event_type == InteractiveMarkerFeedback::MENU_SELECT)
+  {
+    InteractiveMarker marker;
+    if (server_->get(name_, marker))
+    {
+      if (!marker.controls.empty() && !marker.controls.front().markers.empty())
+      {
+        auto& box = marker.controls.front().markers.front();
+        internal::setBoxSize(marker, box.scale, BoxSize(box.scale.x * 1.1, box.scale.y * 1.1, box.scale.z * 1.1));
+        updateDescription(marker);
+        addMarker(marker);
+      }
+    }
+  }
+}
+
 void AnnotationMarker::commit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
   if (feedback->event_type == InteractiveMarkerFeedback::MENU_SELECT)
@@ -397,9 +516,7 @@ void AnnotationMarker::setTime(const ros::Time& time)
         if (!marker.controls.empty() && !marker.controls.front().markers.empty())
         {
           auto& box = marker.controls.front().markers.front();
-          box.scale.x = instance.box.length;
-          box.scale.y = instance.box.width;
-          box.scale.z = instance.box.height;
+          internal::setBoxSize(marker, box.scale, instance.box);
           box.color.r = 0.2;
           box.color.g = 1.0;
           box.color.b = 0.2;
@@ -444,6 +561,7 @@ void Markers::createNewAnnotation(const geometry_msgs::PointStamped::ConstPtr& m
 
 void Markers::handlePointcloud(const sensor_msgs::PointCloud2ConstPtr& cloud)
 {
+  cloud_ = cloud;
   time_ = cloud->header.stamp;
   for (auto& marker : markers_)
   {
@@ -615,6 +733,16 @@ void Markers::publishTrackMarkers()
   }
 
   track_marker_publisher_.publish(message);
+}
+
+sensor_msgs::PointCloud2ConstPtr Markers::cloud() const
+{
+  return cloud_;
+}
+
+tf::TransformListener& Markers::transformListener()
+{
+  return transform_listener_;
 }
 
 }  // namespace annotate
