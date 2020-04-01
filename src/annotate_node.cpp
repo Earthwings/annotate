@@ -34,7 +34,7 @@ Marker createCube(float scale)
   marker.color.r = 0.5;
   marker.color.g = 0.5;
   marker.color.b = 0.5;
-  marker.color.a = 0.8;
+  marker.color.a = 0.7;
   return marker;
 }
 
@@ -46,7 +46,7 @@ Marker createTrackLine(float scale)
   marker.color.r = 0.5;
   marker.color.g = 1.0;
   marker.color.b = 0.5;
-  marker.color.a = 0.8;
+  marker.color.a = 0.7;
   return marker;
 }
 
@@ -60,7 +60,7 @@ Marker createTrackSpheres(float scale)
   marker.color.r = 0.5;
   marker.color.g = 1.0;
   marker.color.b = 0.5;
-  marker.color.a = 0.8;
+  marker.color.a = 0.7;
   return marker;
 }
 
