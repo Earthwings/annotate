@@ -1,10 +1,14 @@
-FROM ros:kinetic-ros-base
+ARG ROS_DISTRO=melodic
+FROM ros:${ROS_DISTRO}-ros-base
+
+COPY NVIDIA-DRIVER.run /tmp/NVIDIA-DRIVER.run
 
 ARG USERNAME=user
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
-COPY NVIDIA-DRIVER.run /tmp/NVIDIA-DRIVER.run
+# Avoid warnings by switching to noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Configure apt and install packages
 RUN apt-get update \
@@ -19,8 +23,7 @@ RUN apt-get update \
     # Install C++ tools
     && apt-get -y install build-essential cmake cppcheck valgrind \
     # Install ROS packages
-    && apt-get -y install python-catkin-tools ros-kinetic-rviz \
-    # libqt5widgets5 libqt5gui5 qtbase5-dev libogre-1.9-dev liburdfdom-dev
+    && apt-get -y install python-catkin-tools ros-${ROS_DISTRO}-pcl-ros ros-${ROS_DISTRO}-rviz \
     #
     # Create a non-root user to use if preferred - see https://aka.ms/vscode-remote/containers/non-root-user.
     && groupadd --gid $USER_GID $USERNAME \
