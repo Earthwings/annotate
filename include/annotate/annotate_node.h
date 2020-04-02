@@ -106,7 +106,7 @@ class Markers
 {
 public:
   Markers();
-  void save() const;
+  bool save() const;
   void publishTrackMarkers();
   sensor_msgs::PointCloud2ConstPtr cloud() const;
   tf::TransformListener& transformListener();

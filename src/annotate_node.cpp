@@ -456,10 +456,12 @@ void AnnotationMarker::commit(const visualization_msgs::InteractiveMarkerFeedbac
                                 [this](const TrackInstance& t) { return t.center.stamp_ == time_; }),
                  track_.end());
     track_.push_back(instance);
-    updateState(Committed);
     sort(track_.begin(), track_.end(),
          [](TrackInstance const& a, TrackInstance const& b) -> bool { return a.center.stamp_ < b.center.stamp_; });
-    markers_->save();
+    if (markers_->save())
+    {
+      updateState(Committed);
+    }
     markers_->publishTrackMarkers();
     push();
   }
@@ -645,7 +647,7 @@ void Markers::load()
   }
 }
 
-void Markers::save() const
+bool Markers::save() const
 {
   using namespace YAML;
   Node node;
@@ -693,7 +695,22 @@ void Markers::save() const
   }
 
   ofstream stream(filename_);
-  stream << node;
+  if (stream.is_open())
+  {
+    stream << node;
+    if (stream.bad())
+    {
+      ROS_WARN_STREAM("Failed to write annotations to " << filename_);
+      return false;
+    }
+  }
+  else
+  {
+    ROS_WARN_STREAM("Failed to open " << filename_ << " for writing. Annotations will not be saved.");
+    return false;
+  }
+  stream.close();
+  return true;
 }
 
 void Markers::publishTrackMarkers()
