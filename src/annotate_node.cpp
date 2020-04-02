@@ -138,9 +138,9 @@ AnnotationMarker::AnnotationMarker(Markers* markers, const shared_ptr<Interactiv
   : server_(server), id_(marker_id), markers_(markers)
 {
   MenuHandler::EntryHandle mode_menu = menu_handler_.insert("Mode");
-  menu_handler_.insert(mode_menu, "Locked", boost::bind(&AnnotationMarker::lock, this, _1));
-  menu_handler_.insert(mode_menu, "Change Position", boost::bind(&AnnotationMarker::changePosition, this, _1));
-  menu_handler_.insert(mode_menu, "Change Scale", boost::bind(&AnnotationMarker::changeScale, this, _1));
+  menu_handler_.insert(mode_menu, "Lock", boost::bind(&AnnotationMarker::lock, this, _1));
+  menu_handler_.insert(mode_menu, "Move", boost::bind(&AnnotationMarker::changePosition, this, _1));
+  menu_handler_.insert(mode_menu, "Resize", boost::bind(&AnnotationMarker::changeScale, this, _1));
 
   if (!labels.empty())
   {
