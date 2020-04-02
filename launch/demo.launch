@@ -2,8 +2,10 @@
 <launch>
 	<arg name="bag" default="" />
 	<arg name="labels" default="person,car,motorcycle,bicycle" />
+	<arg name="filename" default="annotate.yaml" />
 	<include file="$(find annotate)/launch/annotate.launch">
 		<arg name="labels" value="$(arg labels)" />
+		<arg name="filename" value="$(arg filename)" />
 	</include>
 	<node type="rviz" name="rviz" pkg="rviz" args="-d $(find annotate)/launch/demo.rviz" />
 	<node pkg="rosbag" type="play" name="playback" output="screen" args="--clock $(arg bag)" if="$(eval bag != '')" launch-prefix="xterm -e" />
