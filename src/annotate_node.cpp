@@ -230,10 +230,9 @@ void AnnotationMarker::pull()
 
 void AnnotationMarker::push()
 {
-  server_->insert(marker_);
-  server_->setCallback(marker_.name, boost::bind(&AnnotationMarker::processFeedback, this, _1));
-  menu_handler_.apply(*server_, marker_.name);
+  server_->insert(marker_, boost::bind(&AnnotationMarker::processFeedback, this, _1));
   server_->applyChanges();
+  menu_handler_.apply(*server_, marker_.name);
 }
 
 void AnnotationMarker::nextMode()
