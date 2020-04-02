@@ -24,6 +24,13 @@ int sgn(T val)
   return (T(0) < val) - (val < T(0));
 }
 
+void setRotation(geometry_msgs::Quaternion& quaternion, double x, double y, double z)
+{
+  Quaternion orientation(x, y, z, 1.0);
+  orientation.normalize();
+  quaternionTFToMsg(orientation, quaternion);
+}
+
 Marker createCube(float scale)
 {
   Marker marker;
@@ -42,6 +49,7 @@ Marker createTrackLine(float scale)
 {
   Marker marker;
   marker.type = Marker::LINE_STRIP;
+  setRotation(marker.pose.orientation, 0.0, 0.0, 0.0);
   marker.scale.x = scale;
   marker.color.r = 0.5;
   marker.color.g = 1.0;
@@ -54,6 +62,7 @@ Marker createTrackSpheres(float scale)
 {
   Marker marker;
   marker.type = Marker::SPHERE_LIST;
+  setRotation(marker.pose.orientation, 0.0, 0.0, 0.0);
   marker.scale.x = scale;
   marker.scale.y = scale;
   marker.scale.z = scale;
@@ -62,13 +71,6 @@ Marker createTrackSpheres(float scale)
   marker.color.b = 0.5;
   marker.color.a = 0.7;
   return marker;
-}
-
-void setRotation(geometry_msgs::Quaternion& quaternion, double x, double y, double z)
-{
-  Quaternion orientation(x, y, z, 1.0);
-  orientation.normalize();
-  quaternionTFToMsg(orientation, quaternion);
 }
 
 }  // namespace internal
@@ -742,7 +744,7 @@ void Markers::publishTrackMarkers()
       dots.header.frame_id = instance.center.frame_id_;
     }
 
-    line.action = line.points.empty() ? Marker::DELETE : Marker::ADD;
+    line.action = line.points.size() < 2 ? Marker::DELETE : Marker::ADD;
     message.markers.push_back(line);
     dots.action = dots.points.empty() ? Marker::DELETE : Marker::ADD;
     message.markers.push_back(dots);
