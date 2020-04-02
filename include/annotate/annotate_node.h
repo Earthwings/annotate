@@ -71,14 +71,21 @@ private:
   void changePosition();
   void changePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void createMarker(const TrackInstance& instance);
-  void addMarker(visualization_msgs::InteractiveMarker& int_marker);
   void setLabel(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void commit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-  void updateDescription(visualization_msgs::InteractiveMarker& marker) const;
-  void updateState(State state, visualization_msgs::InteractiveMarker& marker);
+  void updateDescription();
+  void updateState(State state);
   void expand(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void shrink(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void pull();
+  void push();
+  void removeControls();
+  void createCubeControl();
+  void createPositionControl();
+  void createScaleControl();
+  void setBoxSize(geometry_msgs::Vector3& scale, const BoxSize& box_size);
 
+  visualization_msgs::InteractiveMarker marker_;
   interactive_markers::MenuHandler menu_handler_;
   std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
   Mode mode_{ Move };
@@ -86,7 +93,6 @@ private:
   tf::Pose last_pose_;
   tf::Point last_mouse_point_;
   int id_{ -1 };
-  std::string name_;
   std::map<interactive_markers::MenuHandler::EntryHandle, std::string> labels_;
   std::string label_;
   Track track_;

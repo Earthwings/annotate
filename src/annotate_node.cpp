@@ -64,35 +64,41 @@ Marker createTrackSpheres(float scale)
   return marker;
 }
 
-void removeControls(InteractiveMarker& int_marker)
+}  // namespace internal
+
+BoxSize::BoxSize(double length, double width, double height) : length(length), width(width), height(height)
 {
-  int_marker.controls.resize(1);
+  // does nothing
 }
 
-InteractiveMarkerControl& createCubeControl(InteractiveMarker& marker)
+void AnnotationMarker::removeControls()
+{
+  marker_.controls.resize(1);
+}
+
+void AnnotationMarker::createCubeControl()
 {
   InteractiveMarkerControl control;
   control.always_visible = true;
-  control.markers.push_back(createCube(marker.scale - 0.2));
+  control.markers.push_back(internal::createCube(marker_.scale - 0.2));
   control.interaction_mode = InteractiveMarkerControl::BUTTON;
-  marker.controls.push_back(control);
-  return marker.controls.back();
+  marker_.controls.push_back(control);
 }
 
-void createPositionControl(InteractiveMarker& marker)
+void AnnotationMarker::createPositionControl()
 {
-  removeControls(marker);
+  removeControls();
   InteractiveMarkerControl control;
   Quaternion orien(0.0, 1.0, 0.0, 1.0);
   orien.normalize();
   quaternionTFToMsg(orien, control.orientation);
   control.interaction_mode = InteractiveMarkerControl::MOVE_ROTATE;
-  marker.controls.push_back(control);
+  marker_.controls.push_back(control);
 }
 
-void createScaleControl(InteractiveMarker& marker)
+void AnnotationMarker::createScaleControl()
 {
-  removeControls(marker);
+  removeControls();
   InteractiveMarkerControl control;
 
   control.orientation.w = 1;
@@ -101,7 +107,7 @@ void createScaleControl(InteractiveMarker& marker)
   control.orientation.z = 0;
   control.name = "move_x";
   control.interaction_mode = InteractiveMarkerControl::MOVE_AXIS;
-  marker.controls.push_back(control);
+  marker_.controls.push_back(control);
 
   control.orientation.w = 1;
   control.orientation.x = 0;
@@ -109,7 +115,7 @@ void createScaleControl(InteractiveMarker& marker)
   control.orientation.z = 0;
   control.name = "move_z";
   control.interaction_mode = InteractiveMarkerControl::MOVE_AXIS;
-  marker.controls.push_back(control);
+  marker_.controls.push_back(control);
 
   control.orientation.w = 1;
   control.orientation.x = 0;
@@ -117,22 +123,15 @@ void createScaleControl(InteractiveMarker& marker)
   control.orientation.z = 1;
   control.name = "move_y";
   control.interaction_mode = InteractiveMarkerControl::MOVE_AXIS;
-  marker.controls.push_back(control);
+  marker_.controls.push_back(control);
 }
 
-void setBoxSize(InteractiveMarker& marker, geometry_msgs::Vector3& scale, const BoxSize& box_size)
+void AnnotationMarker::setBoxSize(geometry_msgs::Vector3& scale, const BoxSize& box_size)
 {
   scale.x = box_size.length;
   scale.y = box_size.width;
   scale.z = box_size.height;
-  marker.scale = 0.2 + max(scale.x, max(scale.y, scale.z));
-}
-
-}  // namespace internal
-
-BoxSize::BoxSize(double length, double width, double height) : length(length), width(width), height(height)
-{
-  // does nothing
+  marker_.scale = 0.2 + max(scale.x, max(scale.y, scale.z));
 }
 
 AnnotationMarker::AnnotationMarker(Markers* markers, const shared_ptr<InteractiveMarkerServer>& server,
@@ -206,31 +205,36 @@ void AnnotationMarker::changeSize(const Pose& new_pose)
   size_t const max_component = distance(components.cbegin(), max_element(components.cbegin(), components.cend()));
   auto const change = internal::sgn(mouse_diff.m_floats[max_component]) * diff.m_floats[max_component];
 
-  InteractiveMarker marker;
-  if (server_->get(name_, marker))
+  pull();
+  if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
   {
-    if (!marker.controls.empty() && !marker.controls.front().markers.empty())
-    {
-      auto& box = marker.controls.front().markers.front();
-      Vector3 scale;
-      vector3MsgToTF(box.scale, scale);
-      scale.m_floats[max_component] = max(0.05, scale[max_component] + change);
-      internal::setBoxSize(marker, box.scale, BoxSize(scale.x(), scale.y(), scale.z()));
-      Pose new_center = new_pose;
-      new_center.setOrigin(last_pose_ * (0.5 * diff));
-      poseTFToMsg(new_center, marker.pose);
-      updateState(Modified, marker);
-      updateDescription(marker);
-      addMarker(marker);
-    }
+    auto& box = marker_.controls.front().markers.front();
+    Vector3 scale;
+    vector3MsgToTF(box.scale, scale);
+    scale.m_floats[max_component] = max(0.05, scale[max_component] + change);
+    setBoxSize(box.scale, BoxSize(scale.x(), scale.y(), scale.z()));
+    Pose new_center = new_pose;
+    new_center.setOrigin(last_pose_ * (0.5 * diff));
+    poseTFToMsg(new_center, marker_.pose);
+    updateState(Modified);
+    updateDescription();
+    push();
   }
 }
 
-void AnnotationMarker::addMarker(InteractiveMarker& int_marker)
+void AnnotationMarker::pull()
 {
-  server_->insert(int_marker);
-  server_->setCallback(int_marker.name, boost::bind(&AnnotationMarker::processFeedback, this, _1));
-  menu_handler_.apply(*server_, int_marker.name);
+  if (!server_->get(marker_.name, marker_))
+  {
+    throw std::runtime_error("Unable to retrieve marker " + marker_.name);
+  }
+}
+
+void AnnotationMarker::push()
+{
+  server_->insert(marker_);
+  server_->setCallback(marker_.name, boost::bind(&AnnotationMarker::processFeedback, this, _1));
+  menu_handler_.apply(*server_, marker_.name);
   server_->applyChanges();
 }
 
@@ -253,47 +257,42 @@ void AnnotationMarker::nextMode()
 
 void AnnotationMarker::createMarker(const TrackInstance& instance)
 {
-  InteractiveMarker marker;
-  marker.header.frame_id = instance.center.frame_id_;
-  marker.header.stamp = time_;
+  marker_.header.frame_id = instance.center.frame_id_;
+  marker_.header.stamp = time_;
   auto const center = instance.center.getOrigin();
-  marker.pose.position.x = center.x();
-  marker.pose.position.y = center.y();
-  marker.pose.position.z = center.z();
-  marker.scale = 1;
+  marker_.pose.position.x = center.x();
+  marker_.pose.position.y = center.y();
+  marker_.pose.position.z = center.z();
+  marker_.scale = 1;
 
-  name_ = string("annotation_") + to_string(id_);
-  marker.name = name_;
-  updateDescription(marker);
+  marker_.name = string("annotation_") + to_string(id_);
+  updateDescription();
 
-  internal::createCubeControl(marker);
-  internal::createPositionControl(marker);
-  addMarker(marker);
+  createCubeControl();
+  createPositionControl();
+  push();
 }
 
-void AnnotationMarker::updateDescription(visualization_msgs::InteractiveMarker& marker) const
+void AnnotationMarker::updateDescription()
 {
   stringstream stream;
   stream << label_ << " #" << id_;
-  if (!marker.controls.empty() && !marker.controls.front().markers.empty())
+  if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
   {
-    auto const& box = marker.controls.front().markers.front();
+    auto const& box = marker_.controls.front().markers.front();
     stream << "\n" << setiosflags(ios::fixed) << setprecision(2) << box.scale.x;
     stream << " x " << setiosflags(ios::fixed) << setprecision(2) << box.scale.y;
     stream << " x " << setiosflags(ios::fixed) << setprecision(2) << box.scale.z;
   }
-  marker.description = stream.str();
+  marker_.description = stream.str();
 }
 
 void AnnotationMarker::changePosition()
 {
   mode_ = Move;
-  InteractiveMarker marker;
-  if (server_->get(name_, marker))
-  {
-    internal::createPositionControl(marker);
-    addMarker(marker);
-  }
+  pull();
+  createPositionControl();
+  push();
 }
 
 void AnnotationMarker::changePosition(const InteractiveMarkerFeedbackConstPtr& feedback)
@@ -304,12 +303,9 @@ void AnnotationMarker::changePosition(const InteractiveMarkerFeedbackConstPtr& f
 void AnnotationMarker::lock()
 {
   mode_ = Locked;
-  InteractiveMarker marker;
-  if (server_->get(name_, marker))
-  {
-    internal::removeControls(marker);
-    addMarker(marker);
-  }
+  pull();
+  removeControls();
+  push();
 }
 
 void AnnotationMarker::lock(const InteractiveMarkerFeedbackConstPtr& feedback)
@@ -320,12 +316,9 @@ void AnnotationMarker::lock(const InteractiveMarkerFeedbackConstPtr& feedback)
 void AnnotationMarker::changeScale()
 {
   mode_ = Scale;
-  InteractiveMarker marker;
-  if (server_->get(name_, marker))
-  {
-    internal::createScaleControl(marker);
-    addMarker(marker);
-  }
+  pull();
+  createScaleControl();
+  push();
 }
 
 void AnnotationMarker::changeScale(const InteractiveMarkerFeedbackConstPtr& feedback)
@@ -337,97 +330,91 @@ void AnnotationMarker::setLabel(const visualization_msgs::InteractiveMarkerFeedb
 {
   if (feedback->event_type == InteractiveMarkerFeedback::MENU_SELECT)
   {
-    InteractiveMarker marker;
-    if (server_->get(name_, marker))
+    pull();
+    if (label_ != labels_[feedback->menu_entry_id])
     {
-      if (label_ != labels_[feedback->menu_entry_id])
-      {
-        label_ = labels_[feedback->menu_entry_id];
-        updateDescription(marker);
-        updateState(Modified, marker);
-        addMarker(marker);
-      }
+      label_ = labels_[feedback->menu_entry_id];
+      updateDescription();
+      updateState(Modified);
+      push();
     }
   }
 }
 
 void AnnotationMarker::shrink(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
-  InteractiveMarker marker;
-  if (server_->get(name_, marker))
+  pull();
+  tf::Transform transform;
+  tf::poseMsgToTF(marker_.pose, transform);
+  auto const stamped_transform = StampedTransform(transform, time_, marker_.header.frame_id, "current_annotation");
+
+  auto const cloud = markers_->cloud();
+  auto& transform_listener = markers_->transformListener();
+  transform_listener.setTransform(stamped_transform);
+  string error;
+  if (transform_listener.canTransform("current_annotation", cloud->header.frame_id, cloud->header.stamp, &error))
   {
-    tf::Transform transform;
-    tf::poseMsgToTF(marker.pose, transform);
-    auto const stamped_transform = StampedTransform(transform, time_, marker.header.frame_id, "current_annotation");
-
-    auto const cloud = markers_->cloud();
-    auto& transform_listener = markers_->transformListener();
-    transform_listener.setTransform(stamped_transform);
-    string error;
-    if (transform_listener.canTransform("current_annotation", cloud->header.frame_id, cloud->header.stamp, &error))
+    tf::StampedTransform trafo;
+    transform_listener.lookupTransform("current_annotation", cloud->header.frame_id, cloud->header.stamp, trafo);
+    pcl::PointCloud<pcl::PointXYZ> pointcloud;
+    pcl::fromROSMsg(*cloud, pointcloud);
+    if (pointcloud.points.empty())
     {
-      tf::StampedTransform trafo;
-      transform_listener.lookupTransform("current_annotation", cloud->header.frame_id, cloud->header.stamp, trafo);
-      pcl::PointCloud<pcl::PointXYZ> pointcloud;
-      pcl::fromROSMsg(*cloud, pointcloud);
-      if (pointcloud.points.empty())
+      return;
+    }
+    pcl::PointCloud<pcl::PointXYZ> annotation_cloud;
+    pcl_ros::transformPointCloud(pointcloud, annotation_cloud, trafo);
+    pcl::PointXYZ box_min(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
+    pcl::PointXYZ box_max(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
+    if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
+    {
+      auto& box = marker_.controls.front().markers.front();
+      double const x_min = -0.5 * box.scale.x;
+      double const x_max = -x_min;
+      double const y_min = -0.5 * box.scale.y;
+      double const y_max = -y_min;
+      double const z_min = -0.5 * box.scale.z;
+      double const z_max = -z_min;
+      size_t inside(0);
+      size_t outside(0);
+      for (auto const& point : annotation_cloud.points)
       {
-        return;
-      }
-      pcl::PointCloud<pcl::PointXYZ> annotation_cloud;
-      pcl_ros::transformPointCloud(pointcloud, annotation_cloud, trafo);
-      pcl::PointXYZ box_min(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
-      pcl::PointXYZ box_max(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
-      if (!marker.controls.empty() && !marker.controls.front().markers.empty())
-      {
-        auto& box = marker.controls.front().markers.front();
-        double const x_min = -0.5 * box.scale.x;
-        double const x_max = -x_min;
-        double const y_min = -0.5 * box.scale.y;
-        double const y_max = -y_min;
-        double const z_min = -0.5 * box.scale.z;
-        double const z_max = -z_min;
-        size_t inside(0);
-        size_t outside(0);
-        for (auto const& point : annotation_cloud.points)
+        if (point.x >= x_min && point.x <= x_max && point.y >= y_min && point.y <= y_max && point.z >= z_min &&
+            point.z <= z_max)
         {
-          if (point.x >= x_min && point.x <= x_max && point.y >= y_min && point.y <= y_max && point.z >= z_min &&
-              point.z <= z_max)
-          {
-            ++inside;
-            box_min.x = min(box_min.x, point.x);
-            box_min.y = min(box_min.y, point.y);
-            box_min.z = min(box_min.z, point.z);
-            box_max.x = max(box_max.x, point.x);
-            box_max.y = max(box_max.y, point.y);
-            box_max.z = max(box_max.z, point.z);
-          }
-          else
-          {
-            ++outside;
-          }
+          ++inside;
+          box_min.x = min(box_min.x, point.x);
+          box_min.y = min(box_min.y, point.y);
+          box_min.z = min(box_min.z, point.z);
+          box_max.x = max(box_max.x, point.x);
+          box_max.y = max(box_max.y, point.y);
+          box_max.z = max(box_max.z, point.z);
         }
-
-        Stamped<tf::Point> input(0.5 * tf::Point(box_max.x + box_min.x, box_max.y + box_min.y, box_max.z + box_min.z),
-                                 cloud->header.stamp, "current_annotation");
-        Stamped<tf::Point> output;
-        transform_listener.transformPoint(marker.header.frame_id, input, output);
-        marker.pose.position.x = output.x();
-        marker.pose.position.y = output.y();
-        marker.pose.position.z = output.z();
-        double const margin = 0.05;
-        BoxSize const shrinked(margin + box_max.x - box_min.x, margin + box_max.y - box_min.y,
-                               margin + box_max.z - box_min.z);
-        internal::setBoxSize(marker, box.scale, shrinked);
-        updateDescription(marker);
-        updateState(Modified, marker);
-        addMarker(marker);
+        else
+        {
+          ++outside;
+        }
       }
+
+      Stamped<tf::Point> input(0.5 * tf::Point(box_max.x + box_min.x, box_max.y + box_min.y, box_max.z + box_min.z),
+                               cloud->header.stamp, "current_annotation");
+      Stamped<tf::Point> output;
+      transform_listener.transformPoint(marker_.header.frame_id, input, output);
+      marker_.pose.position.x = output.x();
+      marker_.pose.position.y = output.y();
+      marker_.pose.position.z = output.z();
+      double const margin = 0.05;
+      BoxSize const shrinked(margin + box_max.x - box_min.x, margin + box_max.y - box_min.y,
+                             margin + box_max.z - box_min.z);
+      setBoxSize(box.scale, shrinked);
+      updateDescription();
+      updateState(Modified);
+      push();
     }
-    else
-    {
-      ROS_WARN_STREAM("Transformation failed: " << error);
-    }
+  }
+  else
+  {
+    ROS_WARN_STREAM("Transformation failed: " << error);
   }
 }
 
@@ -435,17 +422,14 @@ void AnnotationMarker::expand(const visualization_msgs::InteractiveMarkerFeedbac
 {
   if (feedback->event_type == InteractiveMarkerFeedback::MENU_SELECT)
   {
-    InteractiveMarker marker;
-    if (server_->get(name_, marker))
+    pull();
+    if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
     {
-      if (!marker.controls.empty() && !marker.controls.front().markers.empty())
-      {
-        auto& box = marker.controls.front().markers.front();
-        internal::setBoxSize(marker, box.scale, BoxSize(box.scale.x * 1.1, box.scale.y * 1.1, box.scale.z * 1.1));
-        updateDescription(marker);
-        updateState(Modified, marker);
-        addMarker(marker);
-      }
+      auto& box = marker_.controls.front().markers.front();
+      setBoxSize(box.scale, BoxSize(box.scale.x * 1.1, box.scale.y * 1.1, box.scale.z * 1.1));
+      updateDescription();
+      updateState(Modified);
+      push();
     }
   }
 }
@@ -454,41 +438,38 @@ void AnnotationMarker::commit(const visualization_msgs::InteractiveMarkerFeedbac
 {
   if (feedback->event_type == InteractiveMarkerFeedback::MENU_SELECT)
   {
-    InteractiveMarker marker;
-    if (server_->get(name_, marker))
+    pull();
+    TrackInstance instance;
+    instance.label = label_;
+
+    tf::Transform transform;
+    tf::poseMsgToTF(marker_.pose, transform);
+    instance.center = StampedTransform(transform, time_, marker_.header.frame_id, "current_annotation");
+
+    if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
     {
-      TrackInstance instance;
-      instance.label = label_;
-
-      tf::Transform transform;
-      tf::poseMsgToTF(marker.pose, transform);
-      instance.center = StampedTransform(transform, time_, marker.header.frame_id, "current_annotation");
-
-      if (!marker.controls.empty() && !marker.controls.front().markers.empty())
-      {
-        auto& box = marker.controls.front().markers.front();
-        instance.box.length = box.scale.x;
-        instance.box.width = box.scale.y;
-        instance.box.height = box.scale.z;
-      }
-
-      tf_broadcaster_.sendTransform(instance.center);
-
-      track_.erase(std::remove_if(track_.begin(), track_.end(),
-                                  [this](const TrackInstance& t) { return t.center.stamp_ == time_; }),
-                   track_.end());
-      track_.push_back(instance);
-      updateState(Committed, marker);
-      sort(track_.begin(), track_.end(),
-           [](TrackInstance const& a, TrackInstance const& b) -> bool { return a.center.stamp_ < b.center.stamp_; });
-      markers_->save();
-      markers_->publishTrackMarkers();
-      addMarker(marker);
+      auto& box = marker_.controls.front().markers.front();
+      instance.box.length = box.scale.x;
+      instance.box.width = box.scale.y;
+      instance.box.height = box.scale.z;
     }
+
+    tf_broadcaster_.sendTransform(instance.center);
+
+    track_.erase(std::remove_if(track_.begin(), track_.end(),
+                                [this](const TrackInstance& t) { return t.center.stamp_ == time_; }),
+                 track_.end());
+    track_.push_back(instance);
+    updateState(Committed);
+    sort(track_.begin(), track_.end(),
+         [](TrackInstance const& a, TrackInstance const& b) -> bool { return a.center.stamp_ < b.center.stamp_; });
+    markers_->save();
+    markers_->publishTrackMarkers();
+    push();
   }
 }
 
-void AnnotationMarker::updateState(State state, visualization_msgs::InteractiveMarker& marker)
+void AnnotationMarker::updateState(State state)
 {
   if (state_ == state)
   {
@@ -496,9 +477,9 @@ void AnnotationMarker::updateState(State state, visualization_msgs::InteractiveM
   }
 
   state_ = state;
-  if (!marker.controls.empty() && !marker.controls.front().markers.empty())
+  if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
   {
-    auto& box = marker.controls.front().markers.front();
+    auto& box = marker_.controls.front().markers.front();
 
     switch (state_)
     {
@@ -534,34 +515,31 @@ Track const& AnnotationMarker::track() const
 void AnnotationMarker::setTime(const ros::Time& time)
 {
   time_ = time;
-  InteractiveMarker marker;
-  if (server_->get(name_, marker))
+  pull();
+  marker_.header.stamp = time;
+
+  for (auto const& instance : track_)
   {
-    marker.header.stamp = time;
-
-    for (auto const& instance : track_)
+    auto const diff = instance.center.stamp_ - time;
+    if (fabs(diff.toSec()) < 0.01)
     {
-      auto const diff = instance.center.stamp_ - time;
-      if (fabs(diff.toSec()) < 0.01)
+      label_ = instance.label;
+      updateDescription();
+      updateState(Committed);
+      poseTFToMsg(instance.center, marker_.pose);
+
+      if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
       {
-        label_ = instance.label;
-        updateDescription(marker);
-        updateState(Committed, marker);
-        poseTFToMsg(instance.center, marker.pose);
-
-        if (!marker.controls.empty() && !marker.controls.front().markers.empty())
-        {
-          auto& box = marker.controls.front().markers.front();
-          internal::setBoxSize(marker, box.scale, instance.box);
-        }
-        addMarker(marker);
-        return;
+        auto& box = marker_.controls.front().markers.front();
+        setBoxSize(box.scale, instance.box);
       }
+      push();
+      return;
     }
-
-    updateState(New, marker);
-    addMarker(marker);
   }
+
+  updateState(New);
+  push();
 }
 
 void AnnotationMarker::setTrack(const Track& track)
