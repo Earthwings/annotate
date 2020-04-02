@@ -737,7 +737,6 @@ void Markers::publishTrackMarkers()
       geometry_msgs::Point point;
       auto const p = instance.center.getOrigin();
       pointTFToMsg(p, point);
-      point.z = 0.0;  // attach to ground
       line.points.push_back(point);
       line.header.frame_id = instance.center.frame_id_;
       dots.points.push_back(point);
