@@ -64,6 +64,13 @@ Marker createTrackSpheres(float scale)
   return marker;
 }
 
+void setRotation(geometry_msgs::Quaternion& quaternion, double x, double y, double z)
+{
+  Quaternion orientation(x, y, z, 1.0);
+  orientation.normalize();
+  quaternionTFToMsg(orientation, quaternion);
+}
+
 }  // namespace internal
 
 BoxSize::BoxSize(double length, double width, double height) : length(length), width(width), height(height)
@@ -89,9 +96,7 @@ void AnnotationMarker::createPositionControl()
 {
   removeControls();
   InteractiveMarkerControl control;
-  Quaternion orien(0.0, 1.0, 0.0, 1.0);
-  orien.normalize();
-  quaternionTFToMsg(orien, control.orientation);
+  internal::setRotation(control.orientation, 0.0, 1.0, 0.0);
   control.interaction_mode = InteractiveMarkerControl::MOVE_ROTATE;
   marker_.controls.push_back(control);
 }
@@ -101,26 +106,17 @@ void AnnotationMarker::createScaleControl()
   removeControls();
   InteractiveMarkerControl control;
 
-  control.orientation.w = 1;
-  control.orientation.x = 1;
-  control.orientation.y = 0;
-  control.orientation.z = 0;
+  internal::setRotation(control.orientation, 1.0, 0.0, 0.0);
   control.name = "move_x";
   control.interaction_mode = InteractiveMarkerControl::MOVE_AXIS;
   marker_.controls.push_back(control);
 
-  control.orientation.w = 1;
-  control.orientation.x = 0;
-  control.orientation.y = 1;
-  control.orientation.z = 0;
+  internal::setRotation(control.orientation, 0.0, 1.0, 0.0);
   control.name = "move_z";
   control.interaction_mode = InteractiveMarkerControl::MOVE_AXIS;
   marker_.controls.push_back(control);
 
-  control.orientation.w = 1;
-  control.orientation.x = 0;
-  control.orientation.y = 0;
-  control.orientation.z = 1;
+  internal::setRotation(control.orientation, 0.0, 0.0, 1.0);
   control.name = "move_y";
   control.interaction_mode = InteractiveMarkerControl::MOVE_AXIS;
   marker_.controls.push_back(control);
