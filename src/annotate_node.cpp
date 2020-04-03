@@ -195,7 +195,6 @@ void AnnotationMarker::processFeedback(const InteractiveMarkerFeedbackConstPtr& 
       }
       break;
   }
-  server_->applyChanges();
 }
 
 void AnnotationMarker::changeSize(const Pose& new_pose)
@@ -242,18 +241,14 @@ void AnnotationMarker::push()
 
 void AnnotationMarker::nextMode()
 {
-  switch (mode_)
+  if (mode_ == Move)
   {
-    case Locked:
-      changePosition();
-      break;
-    case Move:
-      can_change_size_ = false;
-      changeScale();
-      break;
-    case Scale:
-      lock();
-      break;
+    can_change_size_ = false;
+    changeScale();
+  }
+  else if (mode_ == Scale)
+  {
+    changePosition();
   }
 }
 
