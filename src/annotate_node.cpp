@@ -511,6 +511,21 @@ Track const& AnnotationMarker::track() const
   return track_;
 }
 
+tf::StampedTransform estimatePose(tf::StampedTransform const& a, tf::StampedTransform const& b, ros::Time const& time)
+{
+  auto const time_diff = (b.stamp_ - a.stamp_).toSec();
+  if (fabs(time_diff) < 0.001)
+  {
+    // Avoid division by zero and measurement noise affecting interpolation results
+    return a;
+  }
+  auto const ratio = (time - a.stamp_).toSec() / time_diff;
+  tf::Transform transform;
+  transform.setOrigin(a.getOrigin().lerp(b.getOrigin(), ratio));
+  transform.setRotation(a.getRotation().slerp(b.getRotation(), ratio));
+  return tf::StampedTransform(transform, time, a.frame_id_, a.child_frame_id_);
+}
+
 void AnnotationMarker::setTime(const ros::Time& time)
 {
   time_ = time;
@@ -535,6 +550,17 @@ void AnnotationMarker::setTime(const ros::Time& time)
       push();
       return;
     }
+  }
+
+  // Estimate a suitable pose from nearby annotations
+  Track track = track_;
+  sort(track.begin(), track.end(),
+       [time](TrackInstance const& a, TrackInstance const& b) -> bool { return a.timeTo(time) < b.timeTo(time); });
+  double const extrapolation_limit = 2.0;
+  if (track.size() > 1 && track[1].timeTo(time) < extrapolation_limit)
+  {
+    auto const transform = estimatePose(track[0].center, track[1].center, time);
+    poseTFToMsg(transform, marker_.pose);
   }
 
   updateState(New);
