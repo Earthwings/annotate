@@ -80,6 +80,11 @@ BoxSize::BoxSize(double length, double width, double height) : length(length), w
   // does nothing
 }
 
+double TrackInstance::timeTo(ros::Time const& time) const
+{
+  return fabs((time - center.stamp_).toSec());
+}
+
 void AnnotationMarker::removeControls()
 {
   marker_.controls.resize(1);
@@ -517,10 +522,10 @@ void AnnotationMarker::setTime(const ros::Time& time)
   pull();
   marker_.header.stamp = time;
 
+  // Find an existing annotation for this point in time, if any
   for (auto const& instance : track_)
   {
-    auto const diff = instance.center.stamp_ - time;
-    if (fabs(diff.toSec()) < 0.01)
+    if (instance.timeTo(time) < 0.01)
     {
       label_ = instance.label;
       updateDescription();

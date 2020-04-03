@@ -26,6 +26,8 @@ struct TrackInstance
   std::string label;
   tf::StampedTransform center;
   BoxSize box;
+
+  double timeTo(ros::Time const &time) const;
 };
 
 using Track = std::vector<TrackInstance>;
