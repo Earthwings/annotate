@@ -1,18 +1,14 @@
 Panels:
   - Class: rviz/Displays
-    Help Height: 78
+    Help Height: 0
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Global Options1
-        - /Status1
-        - /Grid1
         - /Annotations1
-        - /PointCloud21
-        - /PointCloud21/Autocompute Value Bounds1
-        - /Tracks1
+        - /Annotation Tracks1
+        - /Annotation Tracks1/Namespaces1
       Splitter Ratio: 0.5
-    Tree Height: 770
+    Tree Height: 336
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -21,17 +17,19 @@ Panels:
       - /2D Nav Goal1
       - /Publish Point1
     Name: Tool Properties
-    Splitter Ratio: 0.588679016
+    Splitter Ratio: 0.5886790156364441
   - Class: rviz/Views
     Expanded:
       - /Current View1
     Name: Views
-    Splitter Ratio: 0.572490692
+    Splitter Ratio: 0.5724906921386719
   - Class: rviz/Time
     Experimental: false
     Name: Time
     SyncMode: 2
-    SyncSource: PointCloud2
+    SyncSource: ""
+Preferences:
+  PromptSaveOnExit: true
 Toolbars:
   toolButtonStyle: 2
 Visualization Manager:
@@ -43,7 +41,7 @@ Visualization Manager:
       Color: 160; 160; 164
       Enabled: true
       Line Style:
-        Line Width: 0.0299999993
+        Line Width: 0.029999999329447746
         Value: Lines
       Name: Grid
       Normal Cell Count: 0
@@ -54,15 +52,6 @@ Visualization Manager:
       Plane: XY
       Plane Cell Count: 100
       Reference Frame: <Fixed Frame>
-      Value: true
-    - Class: rviz/InteractiveMarkers
-      Enable Transparency: true
-      Enabled: true
-      Name: Annotations
-      Show Axes: true
-      Show Descriptions: true
-      Show Visual Aids: true
-      Update Topic: /annotate_node/update
       Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -82,22 +71,31 @@ Visualization Manager:
       Max Intensity: 168
       Min Color: 0; 0; 0
       Min Intensity: 1
-      Name: PointCloud2
+      Name: Pointcloud
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.0199999996
-      Style: Flat Squares
+      Size (Pixels): 1
+      Size (m): 0.029999999329447746
+      Style: Spheres
       Topic: /velodyne_points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
+    - Class: rviz/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: true
+      Name: Annotations
+      Show Axes: true
+      Show Descriptions: true
+      Show Visual Aids: true
+      Update Topic: /annotate_node/update
+      Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /tracks
-      Name: Tracks
+      Name: Annotation Tracks
       Namespaces:
         Path: true
         Positions: true
@@ -118,7 +116,10 @@ Visualization Manager:
     - Class: rviz/FocusCamera
     - Class: rviz/Measure
     - Class: rviz/SetInitialPose
+      Theta std deviation: 0.2617993950843811
       Topic: /initialpose
+      X std deviation: 0.5
+      Y std deviation: 0.5
     - Class: rviz/SetGoal
       Topic: /move_base_simple/goal
     - Class: rviz/PublishPoint
@@ -128,69 +129,69 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz/ThirdPersonFollower
-      Distance: 10.419363
+      Class: rviz/Orbit
+      Distance: 13.60848331451416
       Enable Stereo Rendering:
-        Stereo Eye Separation: 0.0599999987
+        Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.48814571
-        Y: 1.0724237
-        Z: 0
-      Focal Shape Fixed Size: false
-      Focal Shape Size: 0.0500000007
+        X: 14.950786590576172
+        Y: 3.273719310760498
+        Z: 0.8433670401573181
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
-      Near Clip Distance: 0.00999999978
-      Pitch: 0.396653652
-      Target Frame: current_annotation
-      Value: ThirdPersonFollower (rviz)
-      Yaw: 0.709042609
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0.22170592844486237
+      Target Frame: <Fixed Frame>
+      Value: Orbit (rviz)
+      Yaw: 0.4030676484107971
     Saved:
-      - Angle: 2.29500246
+      - Angle: 2.2950024604797363
         Class: rviz/TopDownOrtho
         Enable Stereo Rendering:
-          Stereo Eye Separation: 0.0599999987
+          Stereo Eye Separation: 0.05999999865889549
           Stereo Focal Distance: 1
           Swap Stereo Eyes: false
           Value: false
         Invert Z Axis: false
         Name: Birds Eye
-        Near Clip Distance: 0.00999999978
-        Scale: 164.283066
+        Near Clip Distance: 0.009999999776482582
+        Scale: 164.28306579589844
         Target Frame: current_annotation
         Value: TopDownOrtho (rviz)
-        X: 0.320996463
-        Y: 0.133434862
+        X: 0.3209964632987976
+        Y: 0.13343486189842224
       - Class: rviz/ThirdPersonFollower
-        Distance: 10.419363
+        Distance: 10.419363021850586
         Enable Stereo Rendering:
-          Stereo Eye Separation: 0.0599999987
+          Stereo Eye Separation: 0.05999999865889549
           Stereo Focal Distance: 1
           Swap Stereo Eyes: false
           Value: false
         Focal Point:
-          X: 1.48814571
-          Y: 1.0724237
+          X: 1.4881457090377808
+          Y: 1.0724236965179443
           Z: 0
         Focal Shape Fixed Size: false
-        Focal Shape Size: 0.0500000007
+        Focal Shape Size: 0.05000000074505806
         Invert Z Axis: false
         Name: 3D
-        Near Clip Distance: 0.00999999978
-        Pitch: 0.396653652
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.3966536521911621
         Target Frame: current_annotation
         Value: ThirdPersonFollower (rviz)
-        Yaw: 0.709042609
+        Yaw: 0.7090426087379456
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1075
+  Height: 778
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001560000038afc0200000007fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003a0000038a000000c600fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f0000038afc0200000004fb0000001e0054006f006f006c002000500072006f0070006500720074006900650073010000003a000000a00000005c00fffffffb0000000a0056006900650077007301000000e0000002e40000009e00fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000270000001a20000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000005d00000004ffc0100000002fb0000000800540069006d00650100000000000005d00000024400fffffffb0000000800540069006d006501000000000000045000000000000000000000035f0000038a00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000040000000000000156000002b4fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003b0000018b000000c700fffffffb0000000a0056006900650077007301000001cc00000123000000a000fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f000003ddfc0200000003fb0000001e0054006f006f006c002000500072006f0070006500720074006900650073000000003b000000af0000005c00fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000270000001a20000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000005d00000004ffc0100000002fb0000000800540069006d006502000001a5000003d0000005d00000004ffb0000000800540069006d0065010000000000000450000000000000000000000416000002b400000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -199,6 +200,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1488
-  X: 430
-  Y: 48
+  Width: 1394
+  X: 431
+  Y: 230
