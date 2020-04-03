@@ -601,7 +601,7 @@ Markers::Markers()
 {
   ros::NodeHandle private_node_handle("~");
   auto const labels = private_node_handle.param<string>("labels", "object");
-  filename_ = private_node_handle.param<string>("filename", "annotate.yaml");
+  filename_ = private_node_handle.param<string>("annotations", "annotate.yaml");
 
   istringstream stream(labels);
   string value;

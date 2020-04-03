@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <launch>
 	<arg name="labels" default="person,car,truck,bus,train,motorcycle,bicycle" />
-	<arg name="filename" default="annotate.yaml" />
+	<arg name="annotations" default="annotate.yaml" />
+	<arg name="pointcloud_topic" default="/velodyne_points" />
 	<node name="annotate" pkg="annotate" type="annotate_node" output="screen">
 		<param name="labels" value="$(arg labels)" />
-		<param name="filename" value="$(arg filename)" />
+		<param name="annotations" value="$(arg annotations)" />
+		<param name="pointcloud_topic" value="$(arg pointcloud_topic)" />
 	</node>
 </launch>
