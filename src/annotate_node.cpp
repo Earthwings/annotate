@@ -165,7 +165,6 @@ AnnotationMarker::AnnotationMarker(Markers* markers, const shared_ptr<Interactiv
 
   time_ = trackInstance.center.stamp_;
   createMarker(trackInstance);
-  server_->applyChanges();
 }
 
 void AnnotationMarker::processFeedback(const InteractiveMarkerFeedbackConstPtr& feedback)
@@ -228,7 +227,7 @@ void AnnotationMarker::pull()
 {
   if (!server_->get(marker_.name, marker_))
   {
-    throw std::runtime_error("Unable to retrieve marker " + marker_.name);
+    push();
   }
 }
 
@@ -267,7 +266,6 @@ void AnnotationMarker::createMarker(const TrackInstance& instance)
 
   createCubeControl();
   createPositionControl();
-  push();
 }
 
 void AnnotationMarker::updateDescription()
@@ -529,6 +527,18 @@ tf::StampedTransform estimatePose(tf::StampedTransform const& a, tf::StampedTran
 void AnnotationMarker::setTime(const ros::Time& time)
 {
   time_ = time;
+  if (!track_.empty())
+  {
+    auto const prune_before_track_start = time < track_.front().center.stamp_ && track_.front().timeTo(time) > 1.0;
+    auto const prune_after_track_end = time > track_.back().center.stamp_ && track_.back().timeTo(time) > 1.0;
+    if (prune_before_track_start || prune_after_track_end)
+    {
+      server_->erase(marker_.name);
+      server_->applyChanges();
+      return;
+    }
+  }
+
   pull();
   marker_.header.stamp = time;
 
@@ -585,6 +595,7 @@ void Markers::createNewAnnotation(const geometry_msgs::PointStamped::ConstPtr& m
   ++current_marker_id_;
   auto marker = make_shared<AnnotationMarker>(this, server_, instance, current_marker_id_, labels_);
   markers_.push_back(marker);
+  marker->setTime(time_);
 }
 
 void Markers::handlePointcloud(const sensor_msgs::PointCloud2ConstPtr& cloud)
@@ -595,6 +606,7 @@ void Markers::handlePointcloud(const sensor_msgs::PointCloud2ConstPtr& cloud)
   {
     marker->setTime(time_);
   }
+  publishTrackMarkers();
 }
 
 Markers::Markers()
@@ -759,13 +771,16 @@ void Markers::publishTrackMarkers()
 
     for (auto const& instance : marker->track())
     {
-      geometry_msgs::Point point;
-      auto const p = instance.center.getOrigin();
-      pointTFToMsg(p, point);
-      line.points.push_back(point);
-      line.header.frame_id = instance.center.frame_id_;
-      dots.points.push_back(point);
-      dots.header.frame_id = instance.center.frame_id_;
+      if (instance.center.stamp_ <= time_ && instance.timeTo(time_) <= 5.0)
+      {
+        geometry_msgs::Point point;
+        auto const p = instance.center.getOrigin();
+        pointTFToMsg(p, point);
+        line.points.push_back(point);
+        line.header.frame_id = instance.center.frame_id_;
+        dots.points.push_back(point);
+        dots.header.frame_id = instance.center.frame_id_;
+      }
     }
 
     line.action = line.points.size() < 2 ? Marker::DELETE : Marker::ADD;
