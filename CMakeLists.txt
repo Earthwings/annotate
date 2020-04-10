@@ -46,14 +46,14 @@ ${catkin_INCLUDE_DIRS}
 ${rviz_INCLUDE_DIRS}
 )
 
-add_executable(${PROJECT_NAME}_node src/${PROJECT_NAME}_node.cpp)
-target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES} yaml-cpp)
-
 set(CMAKE_AUTOMOC ON)
-find_package(Qt5 ${rviz_QT_VERSION} REQUIRED Core Widgets)
+find_package(Qt5 ${rviz_QT_VERSION} REQUIRED Core Widgets Gui)
 ## make target_link_libraries(${QT_LIBRARIES}) pull in all required dependencies
-set(QT_LIBRARIES Qt5::Widgets)
+set(QT_LIBRARIES Qt5::Widgets Qt5::Gui)
 add_definitions(-DQT_NO_KEYWORDS)
+
+add_executable(${PROJECT_NAME}_node src/${PROJECT_NAME}_node.cpp)
+target_link_libraries(${PROJECT_NAME}_node ${QT_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
 
 add_library(${PROJECT_NAME}_tool src/annotate_tool.cpp include/annotate/annotate_tool.h)
 target_link_libraries(${PROJECT_NAME}_tool ${QT_LIBRARIES} ${catkin_LIBRARIES})

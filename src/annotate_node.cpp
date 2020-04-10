@@ -8,6 +8,8 @@
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
+#include <QColor>
+#include <random>
 
 using namespace visualization_msgs;
 using namespace interactive_markers;
@@ -31,6 +33,41 @@ void setRotation(geometry_msgs::Quaternion& quaternion, double x, double y, doub
   quaternionTFToMsg(orientation, quaternion);
 }
 
+std_msgs::ColorRGBA createColor(int id)
+{
+  // Cache color such that subsequent calls return the same one
+  static map<int, std_msgs::ColorRGBA> colors;
+  auto const iter = colors.find(id);
+  if (iter != colors.end())
+  {
+    return iter->second;
+  }
+
+  // Reverse the ID bits to spread them far over the hue range of 0..360
+  // 0 => 0, 1 => 180, 2 => 90, 3 => 270, ...
+  uchar h = uchar(id);
+  h = (h & 0xF0) >> 4 | (h & 0x0F) << 4;
+  h = (h & 0xCC) >> 2 | (h & 0x33) << 2;
+  h = (h & 0xAA) >> 1 | (h & 0x55) << 1;
+  int const hue = int(h * 360.0 / 256);
+
+  // Vary saturation and value slightly
+  random_device rd;
+  mt19937 mt(rd());
+  uniform_int_distribution<int> dist(210, 240);
+  QColor color;
+  color.setHsv(hue, dist(mt), dist(mt));
+
+  std_msgs::ColorRGBA result;
+  qreal r, g, b;
+  color.getRgbF(&r, &g, &b);
+  result.r = r;
+  result.g = g;
+  result.b = b;
+  colors[id] = result;
+  return result;
+}
+
 Marker createCube(float scale)
 {
   Marker marker;
@@ -45,31 +82,27 @@ Marker createCube(float scale)
   return marker;
 }
 
-Marker createTrackLine(float scale)
+Marker createTrackLine(float scale, const std_msgs::ColorRGBA& color)
 {
   Marker marker;
   marker.type = Marker::LINE_STRIP;
   setRotation(marker.pose.orientation, 0.0, 0.0, 0.0);
-  marker.scale.x = scale;
-  marker.color.r = 0.5;
-  marker.color.g = 1.0;
-  marker.color.b = 0.5;
+  marker.color = color;
   marker.color.a = 0.7;
+  marker.scale.x = scale;
   return marker;
 }
 
-Marker createTrackSpheres(float scale)
+Marker createTrackSpheres(float scale, const std_msgs::ColorRGBA& color)
 {
   Marker marker;
   marker.type = Marker::SPHERE_LIST;
   setRotation(marker.pose.orientation, 0.0, 0.0, 0.0);
+  marker.color = color;
+  marker.color.a = 0.7;
   marker.scale.x = scale;
   marker.scale.y = scale;
   marker.scale.z = scale;
-  marker.color.r = 0.5;
-  marker.color.g = 1.0;
-  marker.color.b = 0.5;
-  marker.color.a = 0.7;
   return marker;
 }
 
@@ -762,10 +795,11 @@ void Markers::publishTrackMarkers()
 
   for (auto const& marker : markers_)
   {
-    Marker line = internal::createTrackLine(0.02);
+    auto const color = internal::createColor(marker->id());
+    Marker line = internal::createTrackLine(0.02, color);
     line.id = marker->id();
     line.ns = "Path";
-    Marker dots = internal::createTrackSpheres(0.1);
+    Marker dots = internal::createTrackSpheres(0.1, color);
     dots.id = marker->id() << 16;
     dots.ns = "Positions";
 
