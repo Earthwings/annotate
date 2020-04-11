@@ -7,27 +7,21 @@
 #include <geometry_msgs/PointStamped.h>
 #include <interactive_markers/menu_handler.h>
 #include <memory>
+#include <stack>
 #include <sensor_msgs/PointCloud2.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
+#include <QTime>
 
 namespace annotate
 {
-struct BoxSize
-{
-  explicit BoxSize(double length = 0.0, double width = 0.0, double height = 0.0);
-  double length{ 0.0 };
-  double width{ 0.0 };
-  double height{ 0.0 };
-};
-
 struct TrackInstance
 {
   std::string label;
   tf::StampedTransform center;
-  BoxSize box;
+  tf::Vector3 box_size;
 
-  double timeTo(ros::Time const &time) const;
+  double timeTo(ros::Time const& time) const;
 };
 
 using Track = std::vector<TrackInstance>;
@@ -63,6 +57,18 @@ private:
     Modified
   };
 
+  struct UndoState
+  {
+    QTime time;
+    std::string undo_description;
+
+    geometry_msgs::Pose pose;
+    tf::Vector3 box_size;
+    std::string label;
+    State state;
+  };
+
+  void updateMenu();
   void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void nextMode();
   void changeSize(const tf::Pose& new_pose);
@@ -77,6 +83,10 @@ private:
   void commit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void updateDescription();
   void updateState(State state);
+  bool hasMoved(geometry_msgs::Pose const& a, geometry_msgs::Pose const& b) const;
+  void saveMove();
+  void saveForUndo(const std::string& description);
+  void undo(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void expand(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void shrink(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void pull();
@@ -85,7 +95,8 @@ private:
   void createCubeControl();
   void createPositionControl();
   void createScaleControl();
-  void setBoxSize(geometry_msgs::Vector3& scale, const BoxSize& box_size);
+  void setBoxSize(const tf::Vector3& box_size);
+  tf::Vector3 boxSize() const;
 
   visualization_msgs::InteractiveMarker marker_;
   interactive_markers::MenuHandler menu_handler_;
@@ -93,8 +104,10 @@ private:
   Mode mode_{ Move };
   bool can_change_size_{ false };
   tf::Pose last_pose_;
+  bool button_click_active_{ false };
   tf::Point last_mouse_point_;
   int id_{ -1 };
+  std::vector<std::string> label_keys_;
   std::map<interactive_markers::MenuHandler::EntryHandle, std::string> labels_;
   std::string label_;
   Track track_;
@@ -102,6 +115,7 @@ private:
   ros::Time time_;
   tf::TransformBroadcaster tf_broadcaster_;
   State state_{ New };
+  std::stack<UndoState> undo_stack_;
 };
 
 class Markers
