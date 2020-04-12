@@ -416,8 +416,18 @@ void AnnotationMarker::shrinkTo(const PointContext& context)
   Stamped<tf::Point> output;
   markers_->transformListener().transformPoint(marker_.header.frame_id, input, output);
   pointTFToMsg(output, marker_.pose.position);
-  tf::Vector3 const margin(0.05, 0.05, 0.05);
-  setBoxSize(margin + context.maximum - context.minimum);
+  double const offset = 0.05;
+  if (ignore_ground_)
+  {
+    marker_.pose.position.z += offset / 4.0;
+    tf::Vector3 const margin(offset, offset, offset / 2.0);
+    setBoxSize(margin + context.maximum - context.minimum);
+  }
+  else
+  {
+    tf::Vector3 const margin(offset, offset, offset);
+    setBoxSize(margin + context.maximum - context.minimum);
+  }
 }
 
 void AnnotationMarker::shrink(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
@@ -548,7 +558,15 @@ void AnnotationMarker::resize(double offset)
   if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
   {
     auto& box = marker_.controls.front().markers.front();
-    setBoxSize({ box.scale.x + offset, box.scale.y + offset, box.scale.z + offset });
+    if (ignore_ground_)
+    {
+      marker_.pose.position.z += offset / 4.0;
+      setBoxSize({ box.scale.x + offset, box.scale.y + offset, box.scale.z + offset / 2.0 });
+    }
+    else
+    {
+      setBoxSize({ box.scale.x + offset, box.scale.y + offset, box.scale.z + offset });
+    }
   }
 }
 
@@ -586,8 +604,12 @@ AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
       box_min = -0.5 * box_min;
       tf::Vector3 const box_max = -box_min;
       tf::Vector3 offset(0.25, 0.25, 0.25);
-      tf::Vector3 const nearby_min = box_min - offset;
       tf::Vector3 const nearby_max = box_max + offset;
+      tf::Vector3 nearby_min = box_min - offset;
+      if (ignore_ground_)
+      {
+        nearby_min.setZ(box_min.z());
+      }
       for (auto const& p : annotation_cloud.points)
       {
         tf::Vector3 const point(p.x, p.y, p.z);
@@ -769,6 +791,11 @@ void AnnotationMarker::setTrack(const Track& track)
   track_ = track;
 }
 
+void AnnotationMarker::setIgnoreGround(bool enabled)
+{
+  ignore_ground_ = enabled;
+}
+
 void Markers::createNewAnnotation(const geometry_msgs::PointStamped::ConstPtr& message)
 {
   tf::Transform transform;
@@ -780,6 +807,7 @@ void Markers::createNewAnnotation(const geometry_msgs::PointStamped::ConstPtr& m
   ++current_marker_id_;
   auto marker = make_shared<AnnotationMarker>(this, server_, instance, current_marker_id_, labels_);
   markers_.push_back(marker);
+  marker->setIgnoreGround(ignore_ground_);
   marker->setTime(time_);
 }
 
@@ -799,6 +827,7 @@ Markers::Markers()
   ros::NodeHandle private_node_handle("~");
   auto const labels = private_node_handle.param<string>("labels", "object");
   filename_ = private_node_handle.param<string>("annotations", "annotate.yaml");
+  ignore_ground_ = private_node_handle.param<bool>("ignore_ground", ignore_ground_);
 
   istringstream stream(labels);
   string value;

@@ -40,6 +40,7 @@ public:
   int id() const;
   Track const& track() const;
   void setTrack(const Track& track);
+  void setIgnoreGround(bool enabled);
 
   void setTime(const ros::Time& time);
 
@@ -133,6 +134,7 @@ private:
   tf::TransformBroadcaster tf_broadcaster_;
   State state_{ New };
   std::stack<UndoState> undo_stack_;
+  bool ignore_ground_{ false };
 };
 
 class Markers
@@ -162,5 +164,6 @@ private:
   ros::Time last_track_publish_time_;
   sensor_msgs::PointCloud2ConstPtr cloud_;
   tf::TransformListener transform_listener_;
+  bool ignore_ground_{ false };
 };
 }  // namespace annotate
