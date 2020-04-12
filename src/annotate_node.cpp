@@ -214,7 +214,8 @@ void AnnotationMarker::updateMenu()
   }
   menu_handler_.insert(edit_menu, "Expand Box", boost::bind(&AnnotationMarker::expand, this, _1));
   menu_handler_.insert(edit_menu, "Shrink to Points", boost::bind(&AnnotationMarker::shrink, this, _1));
-  menu_handler_.insert(edit_menu, "Commit", boost::bind(&AnnotationMarker::commit, this, _1));
+  menu_handler_.insert(edit_menu, "Auto-fit Box", boost::bind(&AnnotationMarker::autoFit, this, _1));
+  menu_handler_.insert(edit_menu, commit_title, boost::bind(&AnnotationMarker::commit, this, _1));
   menu_handler_.apply(*server_, marker_.name);
 }
 
@@ -406,66 +407,54 @@ void AnnotationMarker::setLabel(const visualization_msgs::InteractiveMarkerFeedb
   }
 }
 
+void AnnotationMarker::shrinkTo(const PointContext& context)
+{
+  Stamped<tf::Point> input(0.5 * (context.maximum + context.minimum), context.time, "current_annotation");
+  Stamped<tf::Point> output;
+  markers_->transformListener().transformPoint(marker_.header.frame_id, input, output);
+  pointTFToMsg(output, marker_.pose.position);
+  tf::Vector3 const margin(0.05, 0.05, 0.05);
+  setBoxSize(margin + context.maximum - context.minimum);
+}
+
 void AnnotationMarker::shrink(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
   pull();
-  tf::Transform transform;
-  tf::poseMsgToTF(marker_.pose, transform);
-  auto const stamped_transform = StampedTransform(transform, time_, marker_.header.frame_id, "current_annotation");
-
-  auto const cloud = markers_->cloud();
-  auto& transform_listener = markers_->transformListener();
-  transform_listener.setTransform(stamped_transform);
-  string error;
-  if (transform_listener.canTransform("current_annotation", cloud->header.frame_id, cloud->header.stamp, &error))
+  auto const context = analyzePoints();
+  if (context.points_inside)
   {
-    tf::StampedTransform trafo;
-    transform_listener.lookupTransform("current_annotation", cloud->header.frame_id, cloud->header.stamp, trafo);
-    pcl::PointCloud<pcl::PointXYZ> pointcloud;
-    pcl::fromROSMsg(*cloud, pointcloud);
-    if (pointcloud.points.empty())
-    {
-      return;
-    }
-    pcl::PointCloud<pcl::PointXYZ> annotation_cloud;
-    pcl_ros::transformPointCloud(pointcloud, annotation_cloud, trafo);
-    tf::Vector3 points_min(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
-    tf::Vector3 points_max(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
-    if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
-    {
-      auto& box = marker_.controls.front().markers.front();
-      tf::Vector3 box_min;
-      vector3MsgToTF(box.scale, box_min);
-      box_min = -0.5 * box_min;
-      tf::Vector3 const box_max = -box_min;
-      for (auto const& p : annotation_cloud.points)
-      {
-        tf::Vector3 const point(p.x, p.y, p.z);
-        tf::Vector3 canary = point;
-        canary.setMax(box_min);
-        canary.setMin(box_max);
-        if (canary == point)
-        {
-          points_min.setMin(point);
-          points_max.setMax(point);
-        }
-      }
+    saveForUndo("shrink to points");
+    shrinkTo(context);
+    updateDescription();
+    updateState(Modified);
+    push();
+  }
+}
 
-      saveForUndo("shrink to points");
-      Stamped<tf::Point> input(0.5 * (points_max + points_min), cloud->header.stamp, "current_annotation");
-      Stamped<tf::Point> output;
-      transform_listener.transformPoint(marker_.header.frame_id, input, output);
-      pointTFToMsg(output, marker_.pose.position);
-      tf::Vector3 const margin(0.05, 0.05, 0.05);
-      setBoxSize(margin + points_max - points_min);
+void AnnotationMarker::autoFit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+{
+  pull();
+  saveForUndo("auto-fit box");
+  if (analyzePoints().points_nearby == 0)
+  {
+    return;
+  }
+  for (int i = 0; i < 4; ++i)
+  {
+    resize(0.25);
+    auto const context = analyzePoints();
+    if (context.points_nearby == 0)
+    {
+      shrinkTo(context);
       updateDescription();
       updateState(Modified);
       push();
+      return;
     }
   }
-  else
+  if (!undo_stack_.empty() && undo_stack_.top().undo_description == "auto-fit box")
   {
-    ROS_WARN_STREAM("Transformation failed: " << error);
+    undo();
   }
 }
 
@@ -520,7 +509,7 @@ void AnnotationMarker::saveForUndo(const string& description)
   undo_stack_.push(state);
 }
 
-void AnnotationMarker::undo(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+void AnnotationMarker::undo()
 {
   if (undo_stack_.empty())
   {
@@ -537,21 +526,99 @@ void AnnotationMarker::undo(const visualization_msgs::InteractiveMarkerFeedbackC
   push();
 }
 
+void AnnotationMarker::undo(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+{
+  undo();
+}
+
 void AnnotationMarker::expand(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
   if (feedback->event_type == InteractiveMarkerFeedback::MENU_SELECT)
   {
     pull();
+    saveForUndo("expand box");
+    resize(0.25);
+    updateDescription();
+    updateState(Modified);
+    push();
+  }
+}
+
+void AnnotationMarker::resize(double offset)
+{
+  if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
+  {
+    auto& box = marker_.controls.front().markers.front();
+    setBoxSize({ box.scale.x + offset, box.scale.y + offset, box.scale.z + offset });
+  }
+}
+
+AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
+{
+  tf::Transform transform;
+  tf::poseMsgToTF(marker_.pose, transform);
+  auto const stamped_transform = StampedTransform(transform, time_, marker_.header.frame_id, "current_annotation");
+
+  auto const cloud = markers_->cloud();
+  auto& transform_listener = markers_->transformListener();
+  transform_listener.setTransform(stamped_transform);
+  string error;
+  PointContext context;
+  context.time = cloud->header.stamp;
+  if (transform_listener.canTransform("current_annotation", cloud->header.frame_id, cloud->header.stamp, &error))
+  {
+    tf::StampedTransform trafo;
+    transform_listener.lookupTransform("current_annotation", cloud->header.frame_id, cloud->header.stamp, trafo);
+    pcl::PointCloud<pcl::PointXYZ> pointcloud;
+    pcl::fromROSMsg(*cloud, pointcloud);
+    if (pointcloud.points.empty())
+    {
+      return context;
+    }
+    pcl::PointCloud<pcl::PointXYZ> annotation_cloud;
+    pcl_ros::transformPointCloud(pointcloud, annotation_cloud, trafo);
+    tf::Vector3 points_min(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
+    tf::Vector3 points_max(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
     if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
     {
-      saveForUndo("expand box");
       auto& box = marker_.controls.front().markers.front();
-      setBoxSize({ 1.1 * box.scale.x, 1.1 * box.scale.y, 1.1 * box.scale.z });
-      updateDescription();
-      updateState(Modified);
-      push();
+      tf::Vector3 box_min;
+      vector3MsgToTF(box.scale, box_min);
+      box_min = -0.5 * box_min;
+      tf::Vector3 const box_max = -box_min;
+      tf::Vector3 offset(0.25, 0.25, 0.25);
+      tf::Vector3 const nearby_min = box_min - offset;
+      tf::Vector3 const nearby_max = box_max + offset;
+      for (auto const& p : annotation_cloud.points)
+      {
+        tf::Vector3 const point(p.x, p.y, p.z);
+        tf::Vector3 alien = point;
+        alien.setMax(nearby_min);
+        alien.setMin(nearby_max);
+        if (alien == point)
+        {
+          tf::Vector3 canary = point;
+          canary.setMax(box_min);
+          canary.setMin(box_max);
+          if (canary == point)
+          {
+            ++context.points_inside;
+            context.minimum.setMin(point);
+            context.maximum.setMax(point);
+          }
+          else
+          {
+            ++context.points_nearby;
+          }
+        }
+      }
     }
   }
+  else
+  {
+    ROS_WARN_STREAM("Transformation failed: " << error);
+  }
+  return context;
 }
 
 void AnnotationMarker::commit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)

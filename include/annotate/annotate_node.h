@@ -12,6 +12,7 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include <QTime>
+#include <limits>
 
 namespace annotate
 {
@@ -68,6 +69,17 @@ private:
     State state;
   };
 
+  struct PointContext
+  {
+    ros::Time time;
+    size_t points_inside{ 0u };
+    size_t points_nearby{ 0u };
+    tf::Vector3 minimum{ std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
+                         std::numeric_limits<float>::max() };
+    tf::Vector3 maximum{ std::numeric_limits<float>::min(), std::numeric_limits<float>::min(),
+                         std::numeric_limits<float>::min() };
+  };
+
   void updateMenu();
   void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void nextMode();
@@ -86,9 +98,14 @@ private:
   bool hasMoved(geometry_msgs::Pose const& a, geometry_msgs::Pose const& b) const;
   void saveMove();
   void saveForUndo(const std::string& description);
+  void undo();
   void undo(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void resize(double offset);
+  PointContext analyzePoints() const;
   void expand(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void shrinkTo(const PointContext& context);
   void shrink(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void autoFit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void pull();
   void push();
   void removeControls();
