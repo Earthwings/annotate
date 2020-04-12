@@ -447,8 +447,12 @@ void AnnotationMarker::autoFit(const visualization_msgs::InteractiveMarkerFeedba
 {
   pull();
   saveForUndo("auto-fit box");
-  if (analyzePoints().points_nearby == 0)
+  auto const context = analyzePoints();
+  if (context.points_nearby == 0)
   {
+    shrinkTo(context);
+    updateState(Modified);
+    push();
     return;
   }
   for (int i = 0; i < 4; ++i)
