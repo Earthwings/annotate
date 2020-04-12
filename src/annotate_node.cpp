@@ -297,7 +297,6 @@ void AnnotationMarker::changeSize(const Pose& new_pose)
     new_center.setOrigin(last_pose_ * (0.5 * diff));
     poseTFToMsg(new_center, marker_.pose);
     updateState(Modified);
-    updateDescription();
     push();
   }
 }
@@ -312,6 +311,7 @@ void AnnotationMarker::pull()
 
 void AnnotationMarker::push()
 {
+  updateDescription();
   server_->insert(marker_, boost::bind(&AnnotationMarker::processFeedback, this, _1));
   updateMenu();
   server_->applyChanges();
@@ -337,10 +337,7 @@ void AnnotationMarker::createMarker(const TrackInstance& instance)
   auto const center = instance.center.getOrigin();
   pointTFToMsg(center, marker_.pose.position);
   marker_.scale = 1;
-
   marker_.name = string("annotation_") + to_string(id_);
-  updateDescription();
-
   createCubeControl();
   createPositionControl();
 }
@@ -407,7 +404,6 @@ void AnnotationMarker::setLabel(const visualization_msgs::InteractiveMarkerFeedb
     {
       saveForUndo("label change");
       label_ = labels_[feedback->menu_entry_id];
-      updateDescription();
       updateState(Modified);
       push();
     }
@@ -432,7 +428,6 @@ void AnnotationMarker::shrink(const visualization_msgs::InteractiveMarkerFeedbac
   {
     saveForUndo("shrink to points");
     shrinkTo(context);
-    updateDescription();
     updateState(Modified);
     push();
   }
@@ -453,7 +448,6 @@ void AnnotationMarker::autoFit(const visualization_msgs::InteractiveMarkerFeedba
     if (context.points_nearby == 0)
     {
       shrinkTo(context);
-      updateDescription();
       updateState(Modified);
       push();
       return;
@@ -528,7 +522,6 @@ void AnnotationMarker::undo()
   label_ = state.label;
   undo_stack_.pop();
   setBoxSize(state.box_size);
-  updateDescription();
   updateState(state.state);
   push();
 }
@@ -545,7 +538,6 @@ void AnnotationMarker::expand(const visualization_msgs::InteractiveMarkerFeedbac
     pull();
     saveForUndo("expand box");
     resize(0.25);
-    updateDescription();
     updateState(Modified);
     push();
   }
@@ -749,7 +741,6 @@ void AnnotationMarker::setTime(const ros::Time& time)
     if (instance.timeTo(time) < 0.01)
     {
       label_ = instance.label;
-      updateDescription();
       updateState(Committed);
       poseTFToMsg(instance.center, marker_.pose);
       setBoxSize(instance.box_size);
