@@ -3,9 +3,11 @@
 	<arg name="labels" default="person,car,truck,bus,train,motorcycle,bicycle" />
 	<arg name="annotations" default="annotate.yaml" />
 	<arg name="pointcloud_topic" default="/velodyne_points" />
+	<arg name="ignore_ground" default="false" />
 	<node name="annotate" pkg="annotate" type="annotate_node" output="screen">
 		<param name="labels" value="$(arg labels)" />
 		<param name="annotations" value="$(arg annotations)" />
 		<param name="pointcloud_topic" value="$(arg pointcloud_topic)" />
+		<param name="ignore_ground" value="$(arg ignore_ground)" />
 	</node>
 </launch>
