@@ -206,6 +206,13 @@ void AnnotationMarker::updateMenu()
     }
   }
 
+  string commit_title = "Commit";
+  auto const context = analyzePoints();
+  if (context.points_nearby)
+  {
+    commit_title += " (despite " + to_string(context.points_nearby) + " nearby points)";
+  }
+
   MenuHandler::EntryHandle edit_menu = menu_handler_.insert("Edit");
   if (!undo_stack_.empty())
   {
