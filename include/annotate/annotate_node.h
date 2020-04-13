@@ -81,7 +81,35 @@ private:
                          std::numeric_limits<float>::min() };
   };
 
-  void updateMenu();
+  struct Automation
+  {
+    enum State
+    {
+      Disabled,
+      Enabled
+    };
+
+    Automation(const std::string& title, State initial_state);
+
+    std::string const title;
+    bool enabled{ false };
+    interactive_markers::MenuHandler::EntryHandle handle;
+    AnnotationMarker* annotation_marker{ nullptr };
+    interactive_markers::MenuHandler* menu_handler{ nullptr };
+
+    void update(interactive_markers::MenuHandler* menu_handler,
+                const interactive_markers::MenuHandler::EntryHandle& parent);
+    void updateState(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  };
+
+  struct Automations
+  {
+    Automation auto_fit_after_predict{ "After Time Changes: Auto-fit Box", Automation::Disabled };
+    Automation shrink_after_resize{ "After Resizing: Shrink to Points", Automation::Disabled };
+    Automation shrink_before_commit{ "Before Committing: Shrink to Points", Automation::Enabled };
+  };
+
+  void updateMenu(const PointContext &context);
   void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void nextMode();
   void changeSize(const tf::Pose& new_pose);
@@ -94,7 +122,8 @@ private:
   void createMarker(const TrackInstance& instance);
   void setLabel(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void commit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-  void updateDescription();
+  void updateDescription(const PointContext &context);
+  void updateAutomations();
   void updateState(State state);
   bool hasMoved(geometry_msgs::Pose const& a, geometry_msgs::Pose const& b) const;
   void saveMove();
@@ -106,6 +135,7 @@ private:
   void expand(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void shrinkTo(const PointContext& context);
   void shrink(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  bool autoFit();
   void autoFit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void pull();
   void push();
@@ -135,6 +165,7 @@ private:
   State state_{ New };
   std::stack<UndoState> undo_stack_;
   bool ignore_ground_{ false };
+  Automations automations_;
 };
 
 class Markers
