@@ -192,15 +192,6 @@ AnnotationMarker::AnnotationMarker(Markers* markers, const shared_ptr<Interactiv
 void AnnotationMarker::updateMenu(const PointContext& context)
 {
   menu_handler_ = MenuHandler();
-  MenuHandler::EntryHandle mode_menu = menu_handler_.insert("Mode");
-  menu_handler_.insert(mode_menu, "Lock", boost::bind(&AnnotationMarker::lock, this, _1));
-  menu_handler_.insert(mode_menu, "Move", boost::bind(&AnnotationMarker::changePosition, this, _1));
-  menu_handler_.insert(mode_menu, "Resize", boost::bind(&AnnotationMarker::changeScale, this, _1));
-
-  MenuHandler::EntryHandle automations_menu = menu_handler_.insert("Automations");
-  automations_.auto_fit_after_predict.update(&menu_handler_, automations_menu);
-  automations_.shrink_after_resize.update(&menu_handler_, automations_menu);
-  automations_.shrink_before_commit.update(&menu_handler_, automations_menu);
 
   labels_.clear();
   if (!label_keys_.empty())
@@ -210,25 +201,39 @@ void AnnotationMarker::updateMenu(const PointContext& context)
     {
       auto const handle = menu_handler_.insert(label_menu, label, boost::bind(&AnnotationMarker::setLabel, this, _1));
       labels_[handle] = label;
+      menu_handler_.setCheckState(handle, label_ == label ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
     }
   }
 
-  string commit_title = "Commit";
-  if (context.points_nearby)
-  {
-    commit_title += " (despite " + to_string(context.points_nearby) + " nearby points)";
-  }
-
-  MenuHandler::EntryHandle edit_menu = menu_handler_.insert("Edit");
+  MenuHandler::EntryHandle edit_menu = menu_handler_.insert("Actions");
   if (!undo_stack_.empty())
   {
     menu_handler_.insert(edit_menu, "Undo " + undo_stack_.top().undo_description,
                          boost::bind(&AnnotationMarker::undo, this, _1));
   }
+  string commit_title = "Commit";
+  if (context.points_nearby)
+  {
+    commit_title += " (despite " + to_string(context.points_nearby) + " nearby points)";
+  }
   menu_handler_.insert(edit_menu, "Expand Box", boost::bind(&AnnotationMarker::expand, this, _1));
   menu_handler_.insert(edit_menu, "Shrink to Points", boost::bind(&AnnotationMarker::shrink, this, _1));
   menu_handler_.insert(edit_menu, "Auto-fit Box", boost::bind(&AnnotationMarker::autoFit, this, _1));
   menu_handler_.insert(edit_menu, commit_title, boost::bind(&AnnotationMarker::commit, this, _1));
+
+  MenuHandler::EntryHandle automations_menu = menu_handler_.insert("Automations");
+  automations_.auto_fit_after_predict.update(&menu_handler_, automations_menu);
+  automations_.shrink_after_resize.update(&menu_handler_, automations_menu);
+  automations_.shrink_before_commit.update(&menu_handler_, automations_menu);
+
+  MenuHandler::EntryHandle mode_menu = menu_handler_.insert("Box Mode");
+  auto handle = menu_handler_.insert(mode_menu, "Locked", boost::bind(&AnnotationMarker::lock, this, _1));
+  menu_handler_.setCheckState(handle, mode_ == Locked ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
+  handle = menu_handler_.insert(mode_menu, "Move", boost::bind(&AnnotationMarker::changePosition, this, _1));
+  menu_handler_.setCheckState(handle, mode_ == Move ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
+  handle = menu_handler_.insert(mode_menu, "Resize", boost::bind(&AnnotationMarker::changeScale, this, _1));
+  menu_handler_.setCheckState(handle, mode_ == Scale ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
+
   menu_handler_.apply(*server_, marker_.name);
 }
 
