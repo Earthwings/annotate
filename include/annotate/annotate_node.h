@@ -45,6 +45,8 @@ public:
   void setTime(const ros::Time& time);
 
 private:
+  using MenuHandler = interactive_markers::MenuHandler;
+
   enum Mode
   {
     Locked,
@@ -93,12 +95,11 @@ private:
 
     std::string const title;
     bool enabled{ false };
-    interactive_markers::MenuHandler::EntryHandle handle;
+    MenuHandler::EntryHandle handle;
     AnnotationMarker* annotation_marker{ nullptr };
-    interactive_markers::MenuHandler* menu_handler{ nullptr };
+    MenuHandler* menu_handler{ nullptr };
 
-    void update(interactive_markers::MenuHandler* menu_handler,
-                const interactive_markers::MenuHandler::EntryHandle& parent);
+    void update(MenuHandler* menu_handler, const MenuHandler::EntryHandle& parent);
     void updateState(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   };
 
@@ -109,7 +110,7 @@ private:
     Automation shrink_before_commit{ "Before Committing: Shrink to Points", Automation::Enabled };
   };
 
-  void updateMenu(const PointContext &context);
+  void updateMenu(const PointContext& context);
   void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void nextMode();
   void changeSize(const tf::Pose& new_pose);
@@ -122,7 +123,7 @@ private:
   void createMarker(const TrackInstance& instance);
   void setLabel(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void commit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-  void updateDescription(const PointContext &context);
+  void updateDescription(const PointContext& context);
   void updateAutomations();
   void updateState(State state);
   bool hasMoved(geometry_msgs::Pose const& a, geometry_msgs::Pose const& b) const;
@@ -147,7 +148,7 @@ private:
   tf::Vector3 boxSize() const;
 
   visualization_msgs::InteractiveMarker marker_;
-  interactive_markers::MenuHandler menu_handler_;
+  MenuHandler menu_handler_;
   std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
   Mode mode_{ Move };
   bool can_change_size_{ false };
@@ -156,7 +157,7 @@ private:
   tf::Point last_mouse_point_;
   int id_{ -1 };
   std::vector<std::string> label_keys_;
-  std::map<interactive_markers::MenuHandler::EntryHandle, std::string> labels_;
+  std::map<MenuHandler::EntryHandle, std::string> labels_;
   std::string label_;
   Track track_;
   Markers* markers_;

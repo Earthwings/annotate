@@ -157,9 +157,9 @@ void AnnotationMarker::createScaleControl()
   marker_.controls.push_back(control);
 }
 
-tf::Vector3 AnnotationMarker::boxSize() const
+Vector3 AnnotationMarker::boxSize() const
 {
-  tf::Vector3 box_size;
+  Vector3 box_size;
   if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
   {
     auto& box = marker_.controls.front().markers.front();
@@ -168,7 +168,7 @@ tf::Vector3 AnnotationMarker::boxSize() const
   return box_size;
 }
 
-void AnnotationMarker::setBoxSize(const tf::Vector3& box_size)
+void AnnotationMarker::setBoxSize(const Vector3& box_size)
 {
   if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
   {
@@ -179,8 +179,7 @@ void AnnotationMarker::setBoxSize(const tf::Vector3& box_size)
 }
 
 AnnotationMarker::AnnotationMarker(Markers* markers, const shared_ptr<InteractiveMarkerServer>& server,
-                                   const TrackInstance& trackInstance, int marker_id,
-                                   const std::vector<std::string>& label_keys)
+                                   const TrackInstance& trackInstance, int marker_id, const vector<string>& label_keys)
   : server_(server), id_(marker_id), label_keys_(label_keys), markers_(markers)
 {
   time_ = trackInstance.center.stamp_;
@@ -233,7 +232,7 @@ void AnnotationMarker::updateMenu(const PointContext& context)
   menu_handler_.apply(*server_, marker_.name);
 }
 
-AnnotationMarker::Automation::Automation(const std::string& title, State initial_state)
+AnnotationMarker::Automation::Automation(const string& title, State initial_state)
   : title(title), enabled(initial_state == Enabled)
 {
   // does nothing
@@ -380,7 +379,7 @@ void AnnotationMarker::createMarker(const TrackInstance& instance)
   marker_.header.stamp = time_;
   auto const center = instance.center.getOrigin();
   pointTFToMsg(center, marker_.pose.position);
-  tf::Quaternion rotation;
+  Quaternion rotation;
   rotation.setRPY(0.0, 0.0, 0.0);
   quaternionTFToMsg(rotation, marker_.pose.orientation);
   marker_.scale = 1;
@@ -396,13 +395,13 @@ void AnnotationMarker::updateDescription(const PointContext& context)
   if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
   {
     auto const& box = marker_.controls.front().markers.front();
-    tf::Vector3 diff;
+    Vector3 diff;
     if (context.points_inside)
     {
-      tf::Vector3 box_min;
+      Vector3 box_min;
       vector3MsgToTF(box.scale, box_min);
       box_min = -0.5 * box_min;
-      tf::Vector3 const box_max = -box_min;
+      Vector3 const box_max = -box_min;
       diff = (box_min - context.minimum).absolute() + (box_max - context.maximum).absolute();
     }
 
@@ -479,12 +478,12 @@ void AnnotationMarker::shrinkTo(const PointContext& context)
     return;
   }
 
-  Stamped<tf::Point> input(0.5 * (context.maximum + context.minimum), context.time, "current_annotation");
-  Stamped<tf::Point> output;
+  Stamped<Point> input(0.5 * (context.maximum + context.minimum), context.time, "current_annotation");
+  Stamped<Point> output;
   markers_->transformListener().transformPoint(marker_.header.frame_id, input, output);
   pointTFToMsg(output, marker_.pose.position);
   double const offset = 0.05;
-  tf::Vector3 const margin(offset, offset, offset);
+  Vector3 const margin(offset, offset, offset);
   setBoxSize(margin + context.maximum - context.minimum);
 }
 
@@ -563,10 +562,10 @@ void AnnotationMarker::saveMove()
 
 bool AnnotationMarker::hasMoved(geometry_msgs::Pose const& one, geometry_msgs::Pose const& two) const
 {
-  tf::Transform a;
-  tf::poseMsgToTF(one, a);
-  tf::Transform b;
-  tf::poseMsgToTF(two, b);
+  Transform a;
+  poseMsgToTF(one, a);
+  Transform b;
+  poseMsgToTF(two, b);
   return !(a.getOrigin() - b.getOrigin()).fuzzyZero();
 }
 
@@ -644,8 +643,8 @@ void AnnotationMarker::resize(double offset)
 
 AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
 {
-  tf::Transform transform;
-  tf::poseMsgToTF(marker_.pose, transform);
+  Transform transform;
+  poseMsgToTF(marker_.pose, transform);
   auto const cloud = markers_->cloud();
   PointContext context;
   context.time = min(time_, cloud->header.stamp);
@@ -660,7 +659,7 @@ AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
   auto const time = can_transform ? context.time : ros::Time();
   if (transform_listener.canTransform("current_annotation", cloud->header.frame_id, time, &error))
   {
-    tf::StampedTransform trafo;
+    StampedTransform trafo;
     transform_listener.lookupTransform("current_annotation", cloud->header.frame_id, time, trafo);
     pcl::PointCloud<pcl::PointXYZ> pointcloud;
     pcl::fromROSMsg(*cloud, pointcloud);
@@ -670,31 +669,31 @@ AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
     }
     pcl::PointCloud<pcl::PointXYZ> annotation_cloud;
     pcl_ros::transformPointCloud(pointcloud, annotation_cloud, trafo);
-    tf::Vector3 points_min(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
-    tf::Vector3 points_max(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
+    Vector3 points_min(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
+    Vector3 points_max(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
     if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
     {
       auto& box = marker_.controls.front().markers.front();
-      tf::Vector3 box_min;
+      Vector3 box_min;
       vector3MsgToTF(box.scale, box_min);
       box_min = -0.5 * box_min;
-      tf::Vector3 const box_max = -box_min;
-      tf::Vector3 offset(0.25, 0.25, 0.25);
-      tf::Vector3 const nearby_max = box_max + offset;
-      tf::Vector3 nearby_min = box_min - offset;
+      Vector3 const box_max = -box_min;
+      Vector3 offset(0.25, 0.25, 0.25);
+      Vector3 const nearby_max = box_max + offset;
+      Vector3 nearby_min = box_min - offset;
       if (ignore_ground_)
       {
         nearby_min.setZ(box_min.z());
       }
       for (auto const& p : annotation_cloud.points)
       {
-        tf::Vector3 const point(p.x, p.y, p.z);
-        tf::Vector3 alien = point;
+        Vector3 const point(p.x, p.y, p.z);
+        Vector3 alien = point;
         alien.setMax(nearby_min);
         alien.setMin(nearby_max);
         if (alien == point)
         {
-          tf::Vector3 canary = point;
+          Vector3 canary = point;
           canary.setMax(box_min);
           canary.setMin(box_max);
           if (canary == point)
@@ -737,8 +736,8 @@ void AnnotationMarker::commit(const visualization_msgs::InteractiveMarkerFeedbac
     TrackInstance instance;
     instance.label = label_;
 
-    tf::Transform transform;
-    tf::poseMsgToTF(marker_.pose, transform);
+    Transform transform;
+    poseMsgToTF(marker_.pose, transform);
     instance.center = StampedTransform(transform, time_, marker_.header.frame_id, "current_annotation");
 
     if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
@@ -749,9 +748,9 @@ void AnnotationMarker::commit(const visualization_msgs::InteractiveMarkerFeedbac
 
     tf_broadcaster_.sendTransform(instance.center);
 
-    track_.erase(std::remove_if(track_.begin(), track_.end(),
-                                [this](const TrackInstance& t) { return t.center.stamp_ == time_; }),
-                 track_.end());
+    track_.erase(
+        remove_if(track_.begin(), track_.end(), [this](const TrackInstance& t) { return t.center.stamp_ == time_; }),
+        track_.end());
     track_.push_back(instance);
     sort(track_.begin(), track_.end(),
          [](TrackInstance const& a, TrackInstance const& b) -> bool { return a.center.stamp_ < b.center.stamp_; });
@@ -807,7 +806,7 @@ Track const& AnnotationMarker::track() const
   return track_;
 }
 
-tf::StampedTransform estimatePose(tf::StampedTransform const& a, tf::StampedTransform const& b, ros::Time const& time)
+StampedTransform estimatePose(StampedTransform const& a, StampedTransform const& b, ros::Time const& time)
 {
   auto const time_diff = (b.stamp_ - a.stamp_).toSec();
   if (fabs(time_diff) < 0.001)
@@ -816,10 +815,10 @@ tf::StampedTransform estimatePose(tf::StampedTransform const& a, tf::StampedTran
     return a;
   }
   auto const ratio = (time - a.stamp_).toSec() / time_diff;
-  tf::Transform transform;
+  Transform transform;
   transform.setOrigin(a.getOrigin().lerp(b.getOrigin(), ratio));
   transform.setRotation(a.getRotation().slerp(b.getRotation(), ratio));
-  return tf::StampedTransform(transform, time, a.frame_id_, a.child_frame_id_);
+  return StampedTransform(transform, time, a.frame_id_, a.child_frame_id_);
 }
 
 void AnnotationMarker::setTime(const ros::Time& time)
@@ -889,7 +888,7 @@ void AnnotationMarker::setIgnoreGround(bool enabled)
 
 void Markers::createNewAnnotation(const geometry_msgs::PointStamped::ConstPtr& message)
 {
-  tf::Transform transform;
+  Transform transform;
   transform.setOrigin({ message->point.x, message->point.y, message->point.z });
   TrackInstance instance;
   instance.center = StampedTransform(transform, time_, message->header.frame_id, "current_annotation");
@@ -1104,7 +1103,7 @@ sensor_msgs::PointCloud2ConstPtr Markers::cloud() const
   return cloud_;
 }
 
-tf::TransformListener& Markers::transformListener()
+TransformListener& Markers::transformListener()
 {
   return transform_listener_;
 }
