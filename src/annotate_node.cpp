@@ -991,6 +991,7 @@ void Markers::load()
       current_marker_id_ = max(current_marker_id_, id);
       auto marker = make_shared<AnnotationMarker>(this, server_, track.front(), id, labels_);
       marker->setTrack(track);
+      marker->setIgnoreGround(ignore_ground_);
       markers_.push_back(marker);
     }
   }
