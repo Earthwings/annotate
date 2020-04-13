@@ -184,16 +184,24 @@ AnnotationMarker::AnnotationMarker(Markers* markers, const shared_ptr<Interactiv
   : server_(server), id_(marker_id), label_keys_(label_keys), markers_(markers)
 {
   time_ = trackInstance.center.stamp_;
+  automations_.auto_fit_after_predict.annotation_marker = this;
+  automations_.shrink_after_resize.annotation_marker = this;
+  automations_.shrink_before_commit.annotation_marker = this;
   createMarker(trackInstance);
 }
 
-void AnnotationMarker::updateMenu()
+void AnnotationMarker::updateMenu(const PointContext& context)
 {
   menu_handler_ = MenuHandler();
   MenuHandler::EntryHandle mode_menu = menu_handler_.insert("Mode");
   menu_handler_.insert(mode_menu, "Lock", boost::bind(&AnnotationMarker::lock, this, _1));
   menu_handler_.insert(mode_menu, "Move", boost::bind(&AnnotationMarker::changePosition, this, _1));
   menu_handler_.insert(mode_menu, "Resize", boost::bind(&AnnotationMarker::changeScale, this, _1));
+
+  MenuHandler::EntryHandle automations_menu = menu_handler_.insert("Automations");
+  automations_.auto_fit_after_predict.update(&menu_handler_, automations_menu);
+  automations_.shrink_after_resize.update(&menu_handler_, automations_menu);
+  automations_.shrink_before_commit.update(&menu_handler_, automations_menu);
 
   labels_.clear();
   if (!label_keys_.empty())
@@ -207,7 +215,6 @@ void AnnotationMarker::updateMenu()
   }
 
   string commit_title = "Commit";
-  auto const context = analyzePoints();
   if (context.points_nearby)
   {
     commit_title += " (despite " + to_string(context.points_nearby) + " nearby points)";
@@ -224,6 +231,31 @@ void AnnotationMarker::updateMenu()
   menu_handler_.insert(edit_menu, "Auto-fit Box", boost::bind(&AnnotationMarker::autoFit, this, _1));
   menu_handler_.insert(edit_menu, commit_title, boost::bind(&AnnotationMarker::commit, this, _1));
   menu_handler_.apply(*server_, marker_.name);
+}
+
+AnnotationMarker::Automation::Automation(const std::string& title, State initial_state)
+  : title(title), enabled(initial_state == Enabled)
+{
+  // does nothing
+}
+
+void AnnotationMarker::Automation::update(interactive_markers::MenuHandler* handler,
+                                          const interactive_markers::MenuHandler::EntryHandle& parent)
+{
+  menu_handler = handler;
+  handle = menu_handler->insert(parent, title, boost::bind(&AnnotationMarker::Automation::updateState, this, _1));
+  menu_handler->setCheckState(handle, enabled ? MenuHandler::CHECKED : MenuHandler::UNCHECKED);
+}
+
+void AnnotationMarker::Automation::updateState(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+{
+  interactive_markers::MenuHandler::CheckState check_state;
+  menu_handler->getCheckState(handle, check_state);
+  enabled = check_state == interactive_markers::MenuHandler::UNCHECKED;
+  if (annotation_marker)
+  {
+    annotation_marker->push();
+  }
 }
 
 void AnnotationMarker::processFeedback(const InteractiveMarkerFeedbackConstPtr& feedback)
@@ -296,6 +328,17 @@ void AnnotationMarker::changeSize(const Pose& new_pose)
     Pose new_center = new_pose;
     new_center.setOrigin(last_pose_ * (0.5 * diff));
     poseTFToMsg(new_center, marker_.pose);
+
+    if (automations_.shrink_after_resize.enabled)
+    {
+      auto const context = analyzePoints();
+      if (context.points_inside)
+      {
+        saveForUndo("shrink to points");
+        shrinkTo(context);
+      }
+    }
+
     updateState(Modified);
     push();
   }
@@ -311,9 +354,10 @@ void AnnotationMarker::pull()
 
 void AnnotationMarker::push()
 {
-  updateDescription();
+  auto const context = analyzePoints();
+  updateDescription(context);
   server_->insert(marker_, boost::bind(&AnnotationMarker::processFeedback, this, _1));
-  updateMenu();
+  updateMenu(context);
   server_->applyChanges();
 }
 
@@ -342,17 +386,32 @@ void AnnotationMarker::createMarker(const TrackInstance& instance)
   createPositionControl();
 }
 
-void AnnotationMarker::updateDescription()
+void AnnotationMarker::updateDescription(const PointContext& context)
 {
   stringstream stream;
   stream << label_ << " #" << id_;
   if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
   {
     auto const& box = marker_.controls.front().markers.front();
-    stream << "\n" << setiosflags(ios::fixed) << setprecision(2) << box.scale.x;
-    stream << " x " << setiosflags(ios::fixed) << setprecision(2) << box.scale.y;
-    stream << " x " << setiosflags(ios::fixed) << setprecision(2) << box.scale.z;
+    tf::Vector3 diff;
+    if (context.points_inside)
+    {
+      tf::Vector3 box_min;
+      vector3MsgToTF(box.scale, box_min);
+      box_min = -0.5 * box_min;
+      tf::Vector3 const box_max = -box_min;
+      diff = (box_min - context.minimum).absolute() + (box_max - context.maximum).absolute();
+    }
+
+    stream << setiosflags(ios::fixed) << setprecision(2);
+    stream << "\n" << box.scale.x << " (+" << diff.x() << ")";
+    stream << " x " << box.scale.y << " (+" << diff.y() << ")";
+    stream << " x " << box.scale.z << " (+" << diff.z() << ")";
   }
+
+  stream << "\n" << context.points_inside << " points inside, ";
+  stream << context.points_nearby << " nearby";
+
   marker_.description = stream.str();
 }
 
@@ -443,18 +502,17 @@ void AnnotationMarker::shrink(const visualization_msgs::InteractiveMarkerFeedbac
   }
 }
 
-void AnnotationMarker::autoFit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+bool AnnotationMarker::autoFit()
 {
-  pull();
-  saveForUndo("auto-fit box");
-  auto const context = analyzePoints();
-  if (context.points_nearby == 0)
   {
-    shrinkTo(context);
-    updateState(Modified);
-    push();
-    return;
+    auto const context = analyzePoints();
+    if (context.points_nearby == 0)
+    {
+      shrinkTo(context);
+      return true;
+    }
   }
+
   for (int i = 0; i < 4; ++i)
   {
     resize(0.25);
@@ -462,12 +520,23 @@ void AnnotationMarker::autoFit(const visualization_msgs::InteractiveMarkerFeedba
     if (context.points_nearby == 0)
     {
       shrinkTo(context);
-      updateState(Modified);
-      push();
-      return;
+      return true;
     }
   }
-  if (!undo_stack_.empty() && undo_stack_.top().undo_description == "auto-fit box")
+
+  return false;
+}
+
+void AnnotationMarker::autoFit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+{
+  pull();
+  saveForUndo("auto-fit box");
+  if (autoFit())
+  {
+    updateState(Modified);
+    push();
+  }
+  else if (!undo_stack_.empty() && undo_stack_.top().undo_description == "auto-fit box")
   {
     undo();
   }
@@ -651,6 +720,17 @@ void AnnotationMarker::commit(const visualization_msgs::InteractiveMarkerFeedbac
   if (feedback->event_type == InteractiveMarkerFeedback::MENU_SELECT)
   {
     pull();
+    if (automations_.shrink_before_commit.enabled)
+    {
+      auto const context = analyzePoints();
+      if (context.points_inside)
+      {
+        saveForUndo("shrink to points");
+        shrinkTo(context);
+        updateState(Modified);
+      }
+    }
+
     TrackInstance instance;
     instance.label = label_;
 
@@ -784,6 +864,10 @@ void AnnotationMarker::setTime(const ros::Time& time)
   {
     auto const transform = estimatePose(track[0].center, track[1].center, time);
     poseTFToMsg(transform, marker_.pose);
+    if (automations_.auto_fit_after_predict.enabled)
+    {
+      autoFit();
+    }
   }
 
   updateState(New);
