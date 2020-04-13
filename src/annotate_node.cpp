@@ -484,17 +484,8 @@ void AnnotationMarker::shrinkTo(const PointContext& context)
   markers_->transformListener().transformPoint(marker_.header.frame_id, input, output);
   pointTFToMsg(output, marker_.pose.position);
   double const offset = 0.05;
-  if (ignore_ground_)
-  {
-    marker_.pose.position.z += offset / 4.0;
-    tf::Vector3 const margin(offset, offset, offset / 2.0);
-    setBoxSize(margin + context.maximum - context.minimum);
-  }
-  else
-  {
-    tf::Vector3 const margin(offset, offset, offset);
-    setBoxSize(margin + context.maximum - context.minimum);
-  }
+  tf::Vector3 const margin(offset, offset, offset);
+  setBoxSize(margin + context.maximum - context.minimum);
 }
 
 void AnnotationMarker::shrink(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
