@@ -655,18 +655,22 @@ AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
 {
   tf::Transform transform;
   tf::poseMsgToTF(marker_.pose, transform);
-  auto const stamped_transform = StampedTransform(transform, time_, marker_.header.frame_id, "current_annotation");
-
   auto const cloud = markers_->cloud();
+  PointContext context;
+  context.time = min(time_, cloud->header.stamp);
+  auto const stamped_transform =
+      StampedTransform(transform, context.time, marker_.header.frame_id, "current_annotation");
+
   auto& transform_listener = markers_->transformListener();
   transform_listener.setTransform(stamped_transform);
   string error;
-  PointContext context;
-  context.time = cloud->header.stamp;
-  if (transform_listener.canTransform("current_annotation", cloud->header.frame_id, cloud->header.stamp, &error))
+  bool const can_transform = transform_listener.waitForTransform("current_annotation", cloud->header.frame_id,
+                                                                 context.time, ros::Duration(0.25));
+  auto const time = can_transform ? context.time : ros::Time();
+  if (transform_listener.canTransform("current_annotation", cloud->header.frame_id, time, &error))
   {
     tf::StampedTransform trafo;
-    transform_listener.lookupTransform("current_annotation", cloud->header.frame_id, cloud->header.stamp, trafo);
+    transform_listener.lookupTransform("current_annotation", cloud->header.frame_id, time, trafo);
     pcl::PointCloud<pcl::PointXYZ> pointcloud;
     pcl::fromROSMsg(*cloud, pointcloud);
     if (pointcloud.points.empty())
