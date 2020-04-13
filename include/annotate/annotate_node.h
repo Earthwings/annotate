@@ -105,7 +105,7 @@ private:
   struct Automations
   {
     Automation auto_fit_after_predict{ "After Time Changes: Auto-fit Box", Automation::Disabled };
-    Automation shrink_after_resize{ "After Resizing: Shrink to Points", Automation::Disabled };
+    Automation shrink_after_resize{ "After Resizing: Shrink to Points", Automation::Enabled };
     Automation shrink_before_commit{ "Before Committing: Shrink to Points", Automation::Enabled };
   };
 
