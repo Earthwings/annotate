@@ -471,6 +471,11 @@ void AnnotationMarker::setLabel(const visualization_msgs::InteractiveMarkerFeedb
 
 void AnnotationMarker::shrinkTo(const PointContext& context)
 {
+  if (!context.points_inside)
+  {
+    return;
+  }
+
   Stamped<tf::Point> input(0.5 * (context.maximum + context.minimum), context.time, "current_annotation");
   Stamped<tf::Point> output;
   markers_->transformListener().transformPoint(marker_.header.frame_id, input, output);
