@@ -380,6 +380,9 @@ void AnnotationMarker::createMarker(const TrackInstance& instance)
   marker_.header.stamp = time_;
   auto const center = instance.center.getOrigin();
   pointTFToMsg(center, marker_.pose.position);
+  tf::Quaternion rotation;
+  rotation.setRPY(0.0, 0.0, 0.0);
+  quaternionTFToMsg(rotation, marker_.pose.orientation);
   marker_.scale = 1;
   marker_.name = string("annotation_") + to_string(id_);
   createCubeControl();
