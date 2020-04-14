@@ -127,16 +127,25 @@ void AnnotationMarker::createCubeControl()
   marker_.controls.push_back(control);
 }
 
-void AnnotationMarker::createPositionControl()
+void AnnotationMarker::createMoveControl()
 {
   removeControls();
   InteractiveMarkerControl control;
   internal::setRotation(control.orientation, 0.0, 1.0, 0.0);
-  control.interaction_mode = InteractiveMarkerControl::MOVE_ROTATE;
+  control.interaction_mode = InteractiveMarkerControl::MOVE_PLANE;
   marker_.controls.push_back(control);
 }
 
-void AnnotationMarker::createScaleControl()
+void AnnotationMarker::createRotationControl()
+{
+  removeControls();
+  InteractiveMarkerControl control;
+  internal::setRotation(control.orientation, 0.0, 1.0, 0.0);
+  control.interaction_mode = InteractiveMarkerControl::ROTATE_AXIS;
+  marker_.controls.push_back(control);
+}
+
+void AnnotationMarker::createResizeControl()
 {
   removeControls();
   InteractiveMarkerControl control;
@@ -193,6 +202,21 @@ void AnnotationMarker::updateMenu(const PointContext& context)
 {
   menu_handler_ = MenuHandler();
 
+  MenuHandler::EntryHandle mode_menu = menu_handler_.insert("Box Mode");
+  auto handle = menu_handler_.insert(mode_menu, "Locked", boost::bind(&AnnotationMarker::lock, this, _1));
+  menu_handler_.setCheckState(handle, mode_ == Locked ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
+  handle = menu_handler_.insert(mode_menu, "Move", boost::bind(&AnnotationMarker::enableMoveControl, this, _1));
+  menu_handler_.setCheckState(handle, mode_ == Move ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
+  handle = menu_handler_.insert(mode_menu, "Resize", boost::bind(&AnnotationMarker::enableResizeControl, this, _1));
+  menu_handler_.setCheckState(handle, mode_ == Resize ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
+  handle = menu_handler_.insert(mode_menu, "Rotate", boost::bind(&AnnotationMarker::enableRotationControl, this, _1));
+  menu_handler_.setCheckState(handle, mode_ == Rotate ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
+
+  MenuHandler::EntryHandle automations_menu = menu_handler_.insert("Automations");
+  automations_.auto_fit_after_predict.update(&menu_handler_, automations_menu);
+  automations_.shrink_after_resize.update(&menu_handler_, automations_menu);
+  automations_.shrink_before_commit.update(&menu_handler_, automations_menu);
+
   labels_.clear();
   if (!label_keys_.empty())
   {
@@ -211,28 +235,16 @@ void AnnotationMarker::updateMenu(const PointContext& context)
     menu_handler_.insert(edit_menu, "Undo " + undo_stack_.top().undo_description,
                          boost::bind(&AnnotationMarker::undo, this, _1));
   }
+  menu_handler_.insert(edit_menu, "Expand Box", boost::bind(&AnnotationMarker::expand, this, _1));
+  menu_handler_.insert(edit_menu, "Shrink to Points", boost::bind(&AnnotationMarker::shrink, this, _1));
+  menu_handler_.insert(edit_menu, "Auto-fit Box", boost::bind(&AnnotationMarker::autoFit, this, _1));
+
   string commit_title = "Commit";
   if (context.points_nearby)
   {
     commit_title += " (despite " + to_string(context.points_nearby) + " nearby points)";
   }
-  menu_handler_.insert(edit_menu, "Expand Box", boost::bind(&AnnotationMarker::expand, this, _1));
-  menu_handler_.insert(edit_menu, "Shrink to Points", boost::bind(&AnnotationMarker::shrink, this, _1));
-  menu_handler_.insert(edit_menu, "Auto-fit Box", boost::bind(&AnnotationMarker::autoFit, this, _1));
-  menu_handler_.insert(edit_menu, commit_title, boost::bind(&AnnotationMarker::commit, this, _1));
-
-  MenuHandler::EntryHandle automations_menu = menu_handler_.insert("Automations");
-  automations_.auto_fit_after_predict.update(&menu_handler_, automations_menu);
-  automations_.shrink_after_resize.update(&menu_handler_, automations_menu);
-  automations_.shrink_before_commit.update(&menu_handler_, automations_menu);
-
-  MenuHandler::EntryHandle mode_menu = menu_handler_.insert("Box Mode");
-  auto handle = menu_handler_.insert(mode_menu, "Locked", boost::bind(&AnnotationMarker::lock, this, _1));
-  menu_handler_.setCheckState(handle, mode_ == Locked ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
-  handle = menu_handler_.insert(mode_menu, "Move", boost::bind(&AnnotationMarker::changePosition, this, _1));
-  menu_handler_.setCheckState(handle, mode_ == Move ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
-  handle = menu_handler_.insert(mode_menu, "Resize", boost::bind(&AnnotationMarker::changeScale, this, _1));
-  menu_handler_.setCheckState(handle, mode_ == Scale ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
+  menu_handler_.insert(commit_title, boost::bind(&AnnotationMarker::commit, this, _1));
 
   menu_handler_.apply(*server_, marker_.name);
 }
@@ -277,7 +289,7 @@ void AnnotationMarker::processFeedback(const InteractiveMarkerFeedbackConstPtr& 
       return;
       break;
     case InteractiveMarkerFeedback::MOUSE_DOWN:
-      if (mode_ == Scale && feedback->mouse_point_valid)
+      if (mode_ == Resize && feedback->mouse_point_valid)
       {
         poseMsgToTF(feedback->pose, last_pose_);
         pointMsgToTF(feedback->mouse_point, last_mouse_point_);
@@ -291,7 +303,7 @@ void AnnotationMarker::processFeedback(const InteractiveMarkerFeedbackConstPtr& 
         button_click_active_ = false;
         can_change_size_ = false;
       }
-      else if (mode_ == Scale && can_change_size_)
+      else if (mode_ == Resize && can_change_size_)
       {
         Pose pose;
         poseMsgToTF(feedback->pose, pose);
@@ -370,11 +382,15 @@ void AnnotationMarker::nextMode()
   if (mode_ == Move)
   {
     can_change_size_ = false;
-    changeScale();
+    enableResizeControl();
   }
-  else if (mode_ == Scale)
+  else if (mode_ == Resize)
   {
-    changePosition();
+    enableRotationControl();
+  }
+  else if (mode_ == Rotate)
+  {
+    enableMoveControl();
   }
 }
 
@@ -390,7 +406,7 @@ void AnnotationMarker::createMarker(const TrackInstance& instance)
   marker_.scale = 1;
   marker_.name = string("annotation_") + to_string(id_);
   createCubeControl();
-  createPositionControl();
+  createMoveControl();
 }
 
 void AnnotationMarker::updateDescription(const PointContext& context)
@@ -422,17 +438,43 @@ void AnnotationMarker::updateDescription(const PointContext& context)
   marker_.description = stream.str();
 }
 
-void AnnotationMarker::changePosition()
+void AnnotationMarker::enableMoveControl()
 {
   mode_ = Move;
   pull();
-  createPositionControl();
+  createMoveControl();
   push();
 }
 
-void AnnotationMarker::changePosition(const InteractiveMarkerFeedbackConstPtr& feedback)
+void AnnotationMarker::enableMoveControl(const InteractiveMarkerFeedbackConstPtr& feedback)
 {
-  changePosition();
+  enableMoveControl();
+}
+
+void AnnotationMarker::enableResizeControl()
+{
+  mode_ = Resize;
+  pull();
+  createResizeControl();
+  push();
+}
+
+void AnnotationMarker::enableResizeControl(const InteractiveMarkerFeedbackConstPtr& feedback)
+{
+  enableResizeControl();
+}
+
+void AnnotationMarker::enableRotationControl()
+{
+  mode_ = Rotate;
+  pull();
+  createRotationControl();
+  push();
+}
+
+void AnnotationMarker::enableRotationControl(const InteractiveMarkerFeedbackConstPtr& feedback)
+{
+  enableRotationControl();
 }
 
 void AnnotationMarker::lock()
@@ -446,19 +488,6 @@ void AnnotationMarker::lock()
 void AnnotationMarker::lock(const InteractiveMarkerFeedbackConstPtr& feedback)
 {
   lock();
-}
-
-void AnnotationMarker::changeScale()
-{
-  mode_ = Scale;
-  pull();
-  createScaleControl();
-  push();
-}
-
-void AnnotationMarker::changeScale(const InteractiveMarkerFeedbackConstPtr& feedback)
-{
-  changeScale();
 }
 
 void AnnotationMarker::setLabel(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)

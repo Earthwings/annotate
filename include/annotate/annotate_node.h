@@ -51,7 +51,8 @@ private:
   {
     Locked,
     Move,
-    Scale
+    Resize,
+    Rotate
   };
 
   enum State
@@ -116,10 +117,12 @@ private:
   void changeSize(const tf::Pose& new_pose);
   void lock();
   void lock(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-  void changeScale();
-  void changeScale(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-  void changePosition();
-  void changePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void enableResizeControl();
+  void enableResizeControl(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void enableMoveControl();
+  void enableMoveControl(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void enableRotationControl();
+  void enableRotationControl(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void createMarker(const TrackInstance& instance);
   void setLabel(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void commit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
@@ -142,8 +145,9 @@ private:
   void push();
   void removeControls();
   void createCubeControl();
-  void createPositionControl();
-  void createScaleControl();
+  void createMoveControl();
+  void createRotationControl();
+  void createResizeControl();
   void setBoxSize(const tf::Vector3& box_size);
   tf::Vector3 boxSize() const;
 
