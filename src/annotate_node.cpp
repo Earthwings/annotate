@@ -235,7 +235,6 @@ void AnnotationMarker::updateMenu(const PointContext& context)
     menu_handler_.insert(edit_menu, "Undo " + undo_stack_.top().undo_description,
                          boost::bind(&AnnotationMarker::undo, this, _1));
   }
-  menu_handler_.insert(edit_menu, "Expand Box", boost::bind(&AnnotationMarker::expand, this, _1));
   menu_handler_.insert(edit_menu, "Shrink to Points", boost::bind(&AnnotationMarker::shrink, this, _1));
   menu_handler_.insert(edit_menu, "Auto-fit Box", boost::bind(&AnnotationMarker::autoFit, this, _1));
 
@@ -644,18 +643,6 @@ void AnnotationMarker::undo()
 void AnnotationMarker::undo(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
   undo();
-}
-
-void AnnotationMarker::expand(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
-{
-  if (feedback->event_type == InteractiveMarkerFeedback::MENU_SELECT)
-  {
-    pull();
-    saveForUndo("expand box");
-    resize(0.25);
-    updateState(Modified);
-    push();
-  }
 }
 
 void AnnotationMarker::resize(double offset)

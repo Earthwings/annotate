@@ -136,7 +136,6 @@ private:
   void undo(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void resize(double offset);
   PointContext analyzePoints() const;
-  void expand(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void shrinkTo(const PointContext& context);
   void shrink(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   bool autoFit();
