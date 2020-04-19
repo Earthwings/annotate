@@ -51,8 +51,8 @@ private:
   {
     Locked,
     Move,
-    Resize,
-    Rotate
+    Rotate,
+    Resize
   };
 
   enum State

@@ -207,10 +207,10 @@ void AnnotationMarker::updateMenu(const PointContext& context)
   menu_handler_.setCheckState(handle, mode_ == Locked ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
   handle = menu_handler_.insert(mode_menu, "Move", boost::bind(&AnnotationMarker::enableMoveControl, this, _1));
   menu_handler_.setCheckState(handle, mode_ == Move ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
-  handle = menu_handler_.insert(mode_menu, "Resize", boost::bind(&AnnotationMarker::enableResizeControl, this, _1));
-  menu_handler_.setCheckState(handle, mode_ == Resize ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
   handle = menu_handler_.insert(mode_menu, "Rotate", boost::bind(&AnnotationMarker::enableRotationControl, this, _1));
   menu_handler_.setCheckState(handle, mode_ == Rotate ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
+  handle = menu_handler_.insert(mode_menu, "Resize", boost::bind(&AnnotationMarker::enableResizeControl, this, _1));
+  menu_handler_.setCheckState(handle, mode_ == Resize ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
 
   MenuHandler::EntryHandle automations_menu = menu_handler_.insert("Automations");
   automations_.auto_fit_after_predict.update(&menu_handler_, automations_menu);
@@ -381,13 +381,13 @@ void AnnotationMarker::nextMode()
   if (mode_ == Move)
   {
     can_change_size_ = false;
-    enableResizeControl();
-  }
-  else if (mode_ == Resize)
-  {
     enableRotationControl();
   }
   else if (mode_ == Rotate)
+  {
+    enableResizeControl();
+  }
+  else if (mode_ == Resize)
   {
     enableMoveControl();
   }
