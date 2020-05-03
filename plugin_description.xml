@@ -1,9 +1,17 @@
-<library path="lib/libannotate_tool">
+<library path="lib/libannotate">
   <class name="annotate/New Annotation"
          type="annotate::AnnotateTool"
          base_class_type="rviz::Tool">
     <description>
-      Tool for creating labelled 3D box annotations in rviz.
+      Create annotated objects in point clouds using labels and bounding boxes.
     </description>
+  </class>
+  <class name="annotate/Annotated PointCloud2"
+         type="annotate::AnnotateDisplay"
+         base_class_type="rviz::Display">
+    <description>
+      Create annotated objects in point clouds using labels and bounding boxes.
+    </description>
+    <message_type>sensor_msgs/PointCloud2</message_type>
   </class>
 </library>

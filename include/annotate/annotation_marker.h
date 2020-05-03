@@ -30,20 +30,22 @@ struct TrackInstance
 
 using Track = std::vector<TrackInstance>;
 
-class Markers;
+class AnnotateDisplay;
 
 class AnnotationMarker
 {
 public:
   using Ptr = std::shared_ptr<AnnotationMarker>;
 
-  AnnotationMarker(Markers* markers, const std::shared_ptr<interactive_markers::InteractiveMarkerServer>& server,
-                   const TrackInstance& trackInstance, int marker_id, const std::vector<std::string>& labels);
+  AnnotationMarker(AnnotateDisplay* markers,
+                   const std::shared_ptr<interactive_markers::InteractiveMarkerServer>& server,
+                   const TrackInstance& trackInstance, int marker_id);
 
   int id() const;
   Track const& track() const;
   void setTrack(const Track& track);
   void setIgnoreGround(bool enabled);
+  void setLabels(const std::vector<std::string>& labels);
 
   void setTime(const ros::Time& time);
 
@@ -60,6 +62,7 @@ private:
 
   enum State
   {
+    Hidden,
     New,
     Committed,
     Modified
@@ -166,10 +169,10 @@ private:
   std::map<MenuHandler::EntryHandle, std::string> labels_;
   std::string label_;
   Track track_;
-  Markers* markers_;
+  AnnotateDisplay* annotate_display_;
   ros::Time time_;
   tf::TransformBroadcaster tf_broadcaster_;
-  State state_{ New };
+  State state_{ Hidden };
   std::stack<UndoState> undo_stack_;
   bool ignore_ground_{ false };
   Automations automations_;

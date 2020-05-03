@@ -1,6 +1,7 @@
 #pragma once
 
 #include "annotation_marker.h"
+#include "file_dialog_property.h"
 #include <ros/ros.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <interactive_markers/menu_handler.h>
@@ -14,21 +15,44 @@
 #include <tf/transform_listener.h>
 #include <QTime>
 #include <limits>
+#include <rviz/display_group.h>
+#include <rviz/properties/string_property.h>
+#include <rviz/properties/bool_property.h>
+#include <rviz/properties/ros_topic_property.h>
+#include <functional>
 
 namespace annotate
 {
+class CloudDisplay;
+class MarkerDisplay;
+class TrackDisplay;
 
-class Markers
+class AnnotateDisplay : public rviz::DisplayGroup
 {
+  Q_OBJECT
 public:
-  Markers();
-  bool save() const;
+  AnnotateDisplay();
+  void onInitialize() override;
+  void setTopic(const QString& topic, const QString& datatype) override;
+  void load(const rviz::Config& config) override;
+
+  bool save();
   void publishTrackMarkers();
   sensor_msgs::PointCloud2ConstPtr cloud() const;
   tf::TransformListener& transformListener();
 
+private Q_SLOTS:
+  void updateTopic();
+  void updateLabels();
+  void openFile();
+  void updateAnnotationFile();
+  void updateIgnoreGround();
+
 private:
-  void load();
+  template <class T>
+  void modifyChild(rviz::Property* parent, QString const& name, std::function<void(T*)> modifier);
+  void adjustView();
+  bool load(std::string const &file);
   void createNewAnnotation(const geometry_msgs::PointStamped::ConstPtr& message);
   void handlePointcloud(const sensor_msgs::PointCloud2ConstPtr& cloud);
 
@@ -46,5 +70,13 @@ private:
   sensor_msgs::PointCloud2ConstPtr cloud_;
   tf::TransformListener transform_listener_;
   bool ignore_ground_{ false };
+  rviz::RosTopicProperty* topic_property_{ nullptr };
+  rviz::BoolProperty* ignore_ground_property_{ nullptr };
+  rviz::StringProperty* labels_property_{ nullptr };
+  FileDialogProperty* open_file_property_{ nullptr };
+  FileDialogProperty* annotation_file_property_{ nullptr };
+  rviz::Display* cloud_display_{ nullptr };
+  rviz::Display* marker_display_{ nullptr };
+  rviz::Display* track_display_{ nullptr };
 };
 }  // namespace annotate

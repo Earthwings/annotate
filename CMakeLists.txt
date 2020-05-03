@@ -25,7 +25,7 @@ visualization_msgs
 ###################################
 catkin_package(
 INCLUDE_DIRS include
-# LIBRARIES annotate
+# LIBRARIES ${PROJECT_NAME}
 CATKIN_DEPENDS
 geometry_msgs
 interactive_markers
@@ -52,20 +52,28 @@ find_package(Qt5 ${rviz_QT_VERSION} REQUIRED Core Widgets Gui)
 set(QT_LIBRARIES Qt5::Widgets Qt5::Gui)
 add_definitions(-DQT_NO_KEYWORDS)
 
-add_executable(${PROJECT_NAME}_node src/annotation_marker.cpp src/${PROJECT_NAME}_node.cpp)
-target_link_libraries(${PROJECT_NAME}_node ${QT_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
+# add_executable(${PROJECT_NAME}_node src/${PROJECT_NAME}_node.cpp
+# target_link_libraries(${PROJECT_NAME}_node ${QT_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
 
-add_library(${PROJECT_NAME}_tool src/annotate_tool.cpp include/annotate/annotate_tool.h)
-target_link_libraries(${PROJECT_NAME}_tool ${QT_LIBRARIES} ${catkin_LIBRARIES})
+add_library(${PROJECT_NAME}
+src/${PROJECT_NAME}_display.cpp
+src/${PROJECT_NAME}_tool.cpp
+src/annotation_marker.cpp
+src/file_dialog_property.cpp
+include/${PROJECT_NAME}/${PROJECT_NAME}_display.h
+include/${PROJECT_NAME}/${PROJECT_NAME}_tool.h
+include/${PROJECT_NAME}/file_dialog_property.h
+)
+target_link_libraries(${PROJECT_NAME} ${QT_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
 
 #############
 ## Install ##
 #############
-install(TARGETS ${PROJECT_NAME}_node
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+#install(TARGETS ${PROJECT_NAME}_node
+#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)
 
-install(TARGETS ${PROJECT_NAME}_tool
+install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
