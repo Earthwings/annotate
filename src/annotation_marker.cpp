@@ -1,5 +1,5 @@
 #include <annotate/annotation_marker.h>
-#include <annotate/annotate_node.h>
+#include <annotate/annotate_display.h>
 #include <sstream>
 #include <visualization_msgs/MarkerArray.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -127,15 +127,25 @@ void AnnotationMarker::setBoxSize(const Vector3& box_size)
   marker_.scale = 0.2 + box_size[box_size.maxAxis()];
 }
 
-AnnotationMarker::AnnotationMarker(Markers* markers, const shared_ptr<InteractiveMarkerServer>& server,
-                                   const TrackInstance& trackInstance, int marker_id, const vector<string>& label_keys)
-  : server_(server), id_(marker_id), label_keys_(label_keys), markers_(markers)
+AnnotationMarker::AnnotationMarker(AnnotateDisplay* annotate_display, const shared_ptr<InteractiveMarkerServer>& server,
+                                   const TrackInstance& trackInstance, int marker_id)
+  : server_(server), id_(marker_id), annotate_display_(annotate_display)
 {
   time_ = trackInstance.center.stamp_;
   automations_.auto_fit_after_predict.annotation_marker = this;
   automations_.shrink_after_resize.annotation_marker = this;
   automations_.shrink_before_commit.annotation_marker = this;
   createMarker(trackInstance);
+}
+
+void AnnotationMarker::setLabels(const std::vector<std::string>& labels)
+{
+  label_keys_ = labels;
+  if (state_ != Hidden)
+  {
+    pull();
+    push();
+  }
 }
 
 void AnnotationMarker::updateMenu(const PointContext& context)
@@ -453,7 +463,7 @@ void AnnotationMarker::shrinkTo(const PointContext& context)
 
   Stamped<Point> input(0.5 * (context.maximum + context.minimum), context.time, "current_annotation");
   Stamped<Point> output;
-  markers_->transformListener().transformPoint(marker_.header.frame_id, input, output);
+  annotate_display_->transformListener().transformPoint(marker_.header.frame_id, input, output);
   pointTFToMsg(output, marker_.pose.position);
   double const offset = 0.05;
   Vector3 const margin(offset, offset, offset);
@@ -606,13 +616,17 @@ AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
 {
   Transform transform;
   poseMsgToTF(marker_.pose, transform);
-  auto const cloud = markers_->cloud();
+  auto const cloud = annotate_display_->cloud();
   PointContext context;
+  if (!cloud)
+  {
+    return context;
+  }
   context.time = min(time_, cloud->header.stamp);
   auto const stamped_transform =
       StampedTransform(transform, context.time, marker_.header.frame_id, "current_annotation");
 
-  auto& transform_listener = markers_->transformListener();
+  auto& transform_listener = annotate_display_->transformListener();
   transform_listener.setTransform(stamped_transform);
   string error;
   bool const can_transform = transform_listener.waitForTransform("current_annotation", cloud->header.frame_id,
@@ -715,11 +729,11 @@ void AnnotationMarker::commit(const visualization_msgs::InteractiveMarkerFeedbac
     track_.push_back(instance);
     sort(track_.begin(), track_.end(),
          [](TrackInstance const& a, TrackInstance const& b) -> bool { return a.center.stamp_ < b.center.stamp_; });
-    if (markers_->save())
+    if (annotate_display_->save())
     {
       updateState(Committed);
     }
-    markers_->publishTrackMarkers();
+    annotate_display_->publishTrackMarkers();
     push();
   }
 }
@@ -738,6 +752,7 @@ void AnnotationMarker::updateState(State state)
 
     switch (state_)
     {
+      case Hidden:
       case New:
         box.color.r = 0.5;
         box.color.g = 0.5;
@@ -793,6 +808,7 @@ void AnnotationMarker::setTime(const ros::Time& time)
     {
       server_->erase(marker_.name);
       server_->applyChanges();
+      updateState(Hidden);
       return;
     }
   }
