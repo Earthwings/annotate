@@ -52,7 +52,7 @@ find_package(Qt5 ${rviz_QT_VERSION} REQUIRED Core Widgets Gui)
 set(QT_LIBRARIES Qt5::Widgets Qt5::Gui)
 add_definitions(-DQT_NO_KEYWORDS)
 
-add_executable(${PROJECT_NAME}_node src/${PROJECT_NAME}_node.cpp)
+add_executable(${PROJECT_NAME}_node src/annotation_marker.cpp src/${PROJECT_NAME}_node.cpp)
 target_link_libraries(${PROJECT_NAME}_node ${QT_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
 
 add_library(${PROJECT_NAME}_tool src/annotate_tool.cpp include/annotate/annotate_tool.h)
