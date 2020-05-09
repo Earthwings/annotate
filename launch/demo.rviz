@@ -4,8 +4,10 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
         - /Annotated PointCloud21
         - /Annotated PointCloud21/Status1
+        - /Annotated PointCloud21/Shortcuts1
       Splitter Ratio: 0.5299999713897705
     Tree Height: 517
   - Class: rviz/Selection
@@ -57,8 +59,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 4.55654764175415
-            Min Value: -0.9923917651176453
+            Max Value: 8.158509254455566
+            Min Value: 0.03612864017486572
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -103,18 +105,26 @@ Visualization Manager:
           Queue Size: 100
           Value: true
       Enabled: true
-      File: /workspace/annotate4.yaml
+      File: /workspace/LCAS/LCAS_20160523_1227_1238.yaml
       Ignore Ground: false
-      Labels: bicycle, car, pedestrian
+      Labels: person
       Name: Annotated PointCloud2
       Open: ""
+      Shortcuts:
+        Value: true
+        auto fit points: Ctrl+F
+        commit annotation: Ctrl+C
+        rotate anti-clockwise: left
+        rotate clockwise: right
+        toggle pause: space
+        undo: Ctrl+Z
       Topic: /velodyne_object_points
       Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: world
+    Fixed Frame: base_link
     Frame Rate: 30
   Name: root
   Tools:
@@ -139,25 +149,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 23.477920532226562
+      Distance: 9.748343467712402
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 15.84809398651123
-        Y: 5.369266033172607
-        Z: -1.1118619441986084
+        X: 3.0042378902435303
+        Y: -1.845599889755249
+        Z: -2.215280055999756
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9647979736328125
+      Pitch: 1.119796872138977
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.6385496854782104
+      Yaw: 3.0690348148345947
     Saved:
       - Angle: 2.2950024604797363
         Class: rviz/TopDownOrtho
@@ -210,5 +220,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1394
-  X: 317
-  Y: 194
+  X: 215
+  Y: 135

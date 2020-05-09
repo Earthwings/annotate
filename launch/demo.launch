@@ -2,5 +2,5 @@
 <launch>
 	<arg name="bag" default="" />
 	<node type="rviz" name="rviz" pkg="rviz" args="-d $(find annotate)/launch/demo.rviz" />
-	<node pkg="rosbag" type="play" name="playback" output="screen" args="--clock $(arg bag)" if="$(eval bag != '')" launch-prefix="xterm -e" />
+	<node pkg="rosbag" type="play" name="playback" output="screen" args="--clock --quiet $(arg bag)" if="$(eval bag != '')" />
 </launch>

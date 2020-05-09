@@ -9,11 +9,15 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
 #include <QColor>
+#include <QShortcut>
 #include <random>
 #include <experimental/filesystem>
 #include <rviz/default_plugin/point_cloud2_display.h>
 #include <rviz/default_plugin/marker_array_display.h>
 #include <rviz/default_plugin/interactive_marker_display.h>
+#include <rviz/view_manager.h>
+#include <rviz/render_panel.h>
+#include <std_srvs/SetBool.h>
 
 using namespace visualization_msgs;
 using namespace interactive_markers;
@@ -133,8 +137,164 @@ void AnnotateDisplay::modifyChild(rviz::Property* parent, QString const& name, s
   }
 }
 
+void AnnotateDisplay::autoFitPoints()
+{
+  if (current_marker_)
+  {
+    current_marker_->autoFit();
+  }
+}
+
+void AnnotateDisplay::undo()
+{
+  if (current_marker_)
+  {
+    current_marker_->undo();
+  }
+}
+
+void AnnotateDisplay::commit()
+{
+  if (current_marker_)
+  {
+    current_marker_->commit();
+  }
+}
+
+void AnnotateDisplay::rotateClockwise()
+{
+  if (current_marker_)
+  {
+    current_marker_->rotateYaw(-0.01);
+  }
+}
+
+void AnnotateDisplay::rotateAntiClockwise()
+{
+  if (current_marker_)
+  {
+    current_marker_->rotateYaw(0.01);
+  }
+}
+
+void AnnotateDisplay::togglePlayPause()
+{
+  if (!playback_client_.isValid())
+  {
+    QStringList services;
+    XmlRpc::XmlRpcValue args, result, payload;
+    args[0] = "/annotate";
+
+    if (!ros::master::execute("getSystemState", args, result, payload, true))
+    {
+      return;
+    }
+
+    for (int i = 0; i < payload.size(); ++i)
+    {
+      for (int j = 0; j < payload[i].size(); ++j)
+      {
+        XmlRpc::XmlRpcValue val = payload[i][j];
+        if (val.size() > 0)
+        {
+          string const ending = "/pause_playback";
+          string const value = val[0];
+          auto const v = value.length();
+          auto const e = ending.length();
+          bool const ends_with = v >= e && 0 == value.compare(v - e, e, ending);
+          if (ends_with)
+          {
+            services.push_back(QString::fromStdString(value));
+          }
+        }
+      }
+    }
+
+    QString const status_name = "rosbag play service";
+    if (services.empty())
+    {
+      setStatus(rviz::StatusProperty::Warn, status_name,
+                "Found no pause_playback ROS service to toggle playback. Maybe 'rosbag play' is not running?");
+    }
+    else if (services.size() == 1)
+    {
+      ros::NodeHandle node_handle;
+      playback_client_ = node_handle.serviceClient<std_srvs::SetBool>(services.front().toStdString());
+      deleteStatus(status_name);
+    }
+    else
+    {
+      QString message = "Found multiple pause_playback ROS services to toggle playback: %1";
+      setStatus(rviz::StatusProperty::Warn, status_name, message.arg(services.join(", ")));
+    }
+  }
+
+  if (playback_client_.isValid())
+  {
+    std_srvs::SetBool value;
+    value.request.data = true;
+    if (playback_client_.call(value))
+    {
+      if (!value.response.success)
+      {
+        value.request.data = false;
+        if (playback_client_.call(value))
+        {
+          if (!value.response.success)
+          {
+            ROS_WARN_STREAM("Play/pause toggle failed.");
+          }
+        }
+      }
+    }
+  }
+}
+
+void AnnotateDisplay::updateShortcuts()
+{
+  auto const enabled = shortcuts_property_->getBool();
+  for (int i = 0; i < shortcuts_property_->numChildren(); ++i)
+  {
+    auto* child = shortcuts_property_->childAt(i);
+    ShortcutProperty* property = qobject_cast<ShortcutProperty*>(child);
+    if (property)
+    {
+      property->setEnabled(enabled);
+    }
+  }
+}
+
 void AnnotateDisplay::onInitialize()
 {
+  auto* render_panel = context_->getViewManager()->getRenderPanel();
+  shortcuts_property_ =
+      new BoolProperty("Shortcuts", true, "Keyboard shortcuts that affect the currently selected annotation", this,
+                       SLOT(updateShortcuts()), this);
+  shortcuts_property_->setDisableChildrenIfFalse(true);
+  QIcon icon = rviz::loadPixmap("package://annotate/icons/classes/Keyboard.svg");
+  shortcuts_property_->setIcon(icon);
+
+  auto* rotate_clockwise_ =
+      new ShortcutProperty("rotate clockwise", "right", "Rotate the current annotation clockwise", shortcuts_property_);
+  rotate_clockwise_->createShortcut(this, render_panel, this, SLOT(rotateClockwise()));
+  auto* rotate_anti_clockwise_ = new ShortcutProperty(
+      "rotate anti-clockwise", "left", "Rotate the current annotation anti-clockwise", shortcuts_property_);
+  rotate_anti_clockwise_->createShortcut(this, render_panel, this, SLOT(rotateAntiClockwise()));
+
+  auto* auto_fit =
+      new ShortcutProperty("auto fit points", "Ctrl+F", "Auto-fit annotation to nearby points", shortcuts_property_);
+  auto_fit->createShortcut(this, render_panel, this, SLOT(autoFitPoints()));
+  auto* commit =
+      new ShortcutProperty("commit annotation", "return", "Commit current annotation and save", shortcuts_property_);
+  commit->createShortcut(this, render_panel, this, SLOT(commit()));
+
+  auto* undo = new ShortcutProperty("undo", "Ctrl+Z", "Undo last action", shortcuts_property_);
+  undo->createShortcut(this, render_panel, this, SLOT(undo()));
+
+  auto* play_pause =
+      new ShortcutProperty("toggle pause", "space", "Toggle play and pause state of rosbag play", shortcuts_property_);
+  play_pause->createShortcut(this, render_panel, this, SLOT(togglePlayPause()));
+
   cloud_display_ = createDisplay("rviz/PointCloud2");
   addDisplay(cloud_display_);
   cloud_display_->initialize(context_);
@@ -168,7 +328,8 @@ void AnnotateDisplay::onInitialize()
   labels_property_ = new rviz::StringProperty("Labels", "object, unknown", "Available labels (separated by comma)",
                                               this, SLOT(updateLabels()), this);
   ignore_ground_property_ = new rviz::BoolProperty("Ignore Ground", false,
-                                                   "Enable to ignore the ground direction (negative z) when shrinking "
+                                                   "Enable to ignore the ground direction (negative z) when "
+                                                   "shrinking "
                                                    "or fitting boxes. This is useful if the point cloud contains "
                                                    "ground points that should not be included in annotations.",
                                                    this, SLOT(updateIgnoreGround()), this);
@@ -311,7 +472,7 @@ void AnnotateDisplay::updateIgnoreGround()
   }
 }
 
-bool AnnotateDisplay::load(std::string const& file)
+bool AnnotateDisplay::load(string const& file)
 {
   using namespace YAML;
   Node node;
@@ -527,6 +688,11 @@ sensor_msgs::PointCloud2ConstPtr AnnotateDisplay::cloud() const
 TransformListener& AnnotateDisplay::transformListener()
 {
   return transform_listener_;
+}
+
+void AnnotateDisplay::setCurrentMarker(AnnotationMarker* marker)
+{
+  current_marker_ = marker;
 }
 
 }  // namespace annotate

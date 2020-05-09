@@ -235,6 +235,7 @@ void AnnotationMarker::processFeedback(const InteractiveMarkerFeedbackConstPtr& 
       break;
     case InteractiveMarkerFeedback::BUTTON_CLICK:
       button_click_active_ = true;
+      annotate_display_->setCurrentMarker(this);
       return;
       break;
     case InteractiveMarkerFeedback::MOUSE_DOWN:
@@ -483,7 +484,7 @@ void AnnotationMarker::shrink(const visualization_msgs::InteractiveMarkerFeedbac
   }
 }
 
-bool AnnotationMarker::autoFit()
+bool AnnotationMarker::fitNearbyPoints()
 {
   {
     auto const context = analyzePoints();
@@ -508,11 +509,11 @@ bool AnnotationMarker::autoFit()
   return false;
 }
 
-void AnnotationMarker::autoFit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+void AnnotationMarker::autoFit()
 {
   pull();
   saveForUndo("auto-fit box");
-  if (autoFit())
+  if (fitNearbyPoints())
   {
     updateState(Modified);
     push();
@@ -521,6 +522,11 @@ void AnnotationMarker::autoFit(const visualization_msgs::InteractiveMarkerFeedba
   {
     undo();
   }
+}
+
+void AnnotationMarker::autoFit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+{
+  autoFit();
 }
 
 void AnnotationMarker::saveMove()
@@ -692,10 +698,21 @@ AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
   return context;
 }
 
-void AnnotationMarker::commit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+void AnnotationMarker::rotateYaw(double delta_rad)
 {
-  if (feedback->event_type == InteractiveMarkerFeedback::MENU_SELECT)
-  {
+  pull();
+  Quaternion rotation;
+  quaternionMsgToTF(marker_.pose.orientation, rotation); 
+  Quaternion delta;
+  delta.setRPY(0.0, 0.0, delta_rad);
+  auto rotated = delta * rotation;
+  rotated.normalize();
+  quaternionTFToMsg(rotated, marker_.pose.orientation);
+  push();
+}
+
+void AnnotationMarker::commit()
+{
     pull();
     if (automations_.shrink_before_commit.enabled)
     {
@@ -735,6 +752,13 @@ void AnnotationMarker::commit(const visualization_msgs::InteractiveMarkerFeedbac
     }
     annotate_display_->publishTrackMarkers();
     push();
+}
+
+void AnnotationMarker::commit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+{
+  if (feedback->event_type == InteractiveMarkerFeedback::MENU_SELECT)
+  {
+    commit();
   }
 }
 
@@ -845,7 +869,7 @@ void AnnotationMarker::setTime(const ros::Time& time)
     poseTFToMsg(transform, marker_.pose);
     if (automations_.auto_fit_after_predict.enabled)
     {
-      autoFit();
+      fitNearbyPoints();
     }
   }
 
