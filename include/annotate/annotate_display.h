@@ -2,6 +2,7 @@
 
 #include "annotation_marker.h"
 #include "file_dialog_property.h"
+#include "shortcut_property.h"
 #include <ros/ros.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <interactive_markers/menu_handler.h>
@@ -35,6 +36,7 @@ public:
   void onInitialize() override;
   void setTopic(const QString& topic, const QString& datatype) override;
   void load(const rviz::Config& config) override;
+  void setCurrentMarker(AnnotationMarker* marker);
 
   bool save();
   void publishTrackMarkers();
@@ -47,12 +49,19 @@ private Q_SLOTS:
   void openFile();
   void updateAnnotationFile();
   void updateIgnoreGround();
+  void autoFitPoints();
+  void undo();
+  void commit();
+  void rotateClockwise();
+  void rotateAntiClockwise();
+  void togglePlayPause();
+  void updateShortcuts();
 
 private:
   template <class T>
   void modifyChild(rviz::Property* parent, QString const& name, std::function<void(T*)> modifier);
   void adjustView();
-  bool load(std::string const &file);
+  bool load(std::string const& file);
   void createNewAnnotation(const geometry_msgs::PointStamped::ConstPtr& message);
   void handlePointcloud(const sensor_msgs::PointCloud2ConstPtr& cloud);
 
@@ -78,5 +87,8 @@ private:
   rviz::Display* cloud_display_{ nullptr };
   rviz::Display* marker_display_{ nullptr };
   rviz::Display* track_display_{ nullptr };
+  AnnotationMarker* current_marker_{ nullptr };
+  BoolProperty* shortcuts_property_{ nullptr };
+  ros::ServiceClient playback_client_;
 };
 }  // namespace annotate

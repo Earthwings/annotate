@@ -60,9 +60,11 @@ src/${PROJECT_NAME}_display.cpp
 src/${PROJECT_NAME}_tool.cpp
 src/annotation_marker.cpp
 src/file_dialog_property.cpp
+src/shortcut_property.cpp
 include/${PROJECT_NAME}/${PROJECT_NAME}_display.h
 include/${PROJECT_NAME}/${PROJECT_NAME}_tool.h
 include/${PROJECT_NAME}/file_dialog_property.h
+include/${PROJECT_NAME}/shortcut_property.h
 )
 target_link_libraries(${PROJECT_NAME} ${QT_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
 

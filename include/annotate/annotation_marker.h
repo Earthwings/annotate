@@ -48,6 +48,10 @@ public:
   void setLabels(const std::vector<std::string>& labels);
 
   void setTime(const ros::Time& time);
+  void autoFit();
+  void undo();
+  void commit();
+  void rotateYaw(double delta_rad);
 
 private:
   using MenuHandler = interactive_markers::MenuHandler;
@@ -138,13 +142,12 @@ private:
   bool hasMoved(geometry_msgs::Pose const& a, geometry_msgs::Pose const& b) const;
   void saveMove();
   void saveForUndo(const std::string& description);
-  void undo();
   void undo(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void resize(double offset);
   PointContext analyzePoints() const;
   void shrinkTo(const PointContext& context);
   void shrink(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-  bool autoFit();
+  bool fitNearbyPoints();
   void autoFit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void pull();
   void push();

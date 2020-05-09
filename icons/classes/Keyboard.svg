@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xml:space="preserve"
+   version="1.1"
+   style="image-rendering:optimizeQuality;shape-rendering:geometricPrecision;text-rendering:geometricPrecision"
+   viewBox="0 0 100 57.162472"
+   x="0px"
+   y="0px"
+   fill-rule="evenodd"
+   clip-rule="evenodd"
+   id="svg14"
+   sodipodi:docname="Keyboard.svg"
+   width="100"
+   height="57.162472"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"><metadata
+     id="metadata18"><rdf:RDF><cc:Work
+         rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><sodipodi:namedview
+     fit-margin-bottom="0"
+     fit-margin-right="0"
+     fit-margin-left="0"
+     fit-margin-top="0"
+     inkscape:document-rotation="0"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1103"
+     id="namedview16"
+     showgrid="false"
+     inkscape:zoom="5.6568543"
+     inkscape:cx="31.312077"
+     inkscape:cy="-6.662432"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg14" /><defs
+     id="defs4"><style
+       type="text/css"
+       id="style2">
+   
+    .fil0 {fill:black;fill-rule:nonzero}
+   
+  </style></defs><g
+     id="g8"
+     transform="scale(45.76659)"
+     style="stroke-width:0.02185"><path
+       class="fil0"
+       d="m 0.052,0 h 2.081 c 0.029,0 0.052,0.023 0.052,0.052 v 1.145 c 0,0.029 -0.023,0.052 -0.052,0.052 H 0.052 C 0.023,1.249 0,1.226 0,1.197 V 0.052 C 0,0.023 0.023,0 0.052,0 Z M 0.476,0.833 V 0.989 H 0.241 V 0.833 Z m 1.449,0 V 0.989 H 1.691 V 0.833 Z m -0.383,0 v 0.156 c -0.306,0 -0.611,0 -0.917,0 V 0.833 c 0.306,0 0.611,0 0.917,0 z M 1.464,0.546 H 1.62 V 0.702 H 1.464 Z m 0.305,0 H 1.925 V 0.702 H 1.769 Z m -0.611,0 H 1.314 V 0.702 H 1.158 Z m -0.305,0 H 1.009 V 0.702 H 0.853 Z m -0.306,0 H 0.703 V 0.702 H 0.547 Z M 1.769,0.26 H 1.925 V 0.416 H 1.769 Z m -0.305,0 H 1.62 V 0.416 H 1.464 Z m -0.306,0 H 1.314 V 0.416 H 1.158 Z m -0.305,0 H 1.009 V 0.416 H 0.853 Z m -0.306,0 H 0.703 V 0.416 H 0.547 Z M 0.241,0.546 H 0.398 V 0.702 H 0.241 Z m 0,-0.286 H 0.398 V 0.416 H 0.241 Z M 2.081,0.104 H 0.104 v 1.041 h 1.977 z"
+       id="path6"
+       style="stroke-width:0.02185" /></g></svg>
