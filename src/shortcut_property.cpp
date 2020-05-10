@@ -1,4 +1,5 @@
 #include <rviz/properties/property.h>
+#include <rviz/load_resource.h>
 #include <annotate/shortcut_property.h>
 #include <QFileDialog>
 #include <QPushButton>
@@ -7,6 +8,8 @@ ShortcutProperty::ShortcutProperty(const QString& name, const QString& default_v
                                    rviz::Property* parent, const char* changed_slot, QObject* receiver)
   : rviz::StringProperty(name, default_value, description, parent, changed_slot, receiver)
 {
+  QString const icon_name = QString(name).replace(' ', '-');
+  setIcon(rviz::loadPixmap(QString("package://annotate/icons/%1.svg").arg(icon_name)));
   connect(this, SIGNAL(changed()), this, SLOT(updateShortcut()));
 }
 

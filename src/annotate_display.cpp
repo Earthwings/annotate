@@ -266,35 +266,6 @@ void AnnotateDisplay::updateShortcuts()
 
 void AnnotateDisplay::onInitialize()
 {
-  auto* render_panel = context_->getViewManager()->getRenderPanel();
-  shortcuts_property_ =
-      new BoolProperty("Shortcuts", true, "Keyboard shortcuts that affect the currently selected annotation", this,
-                       SLOT(updateShortcuts()), this);
-  shortcuts_property_->setDisableChildrenIfFalse(true);
-  QIcon icon = rviz::loadPixmap("package://annotate/icons/classes/Keyboard.svg");
-  shortcuts_property_->setIcon(icon);
-
-  auto* rotate_clockwise_ =
-      new ShortcutProperty("rotate clockwise", "right", "Rotate the current annotation clockwise", shortcuts_property_);
-  rotate_clockwise_->createShortcut(this, render_panel, this, SLOT(rotateClockwise()));
-  auto* rotate_anti_clockwise_ = new ShortcutProperty(
-      "rotate anti-clockwise", "left", "Rotate the current annotation anti-clockwise", shortcuts_property_);
-  rotate_anti_clockwise_->createShortcut(this, render_panel, this, SLOT(rotateAntiClockwise()));
-
-  auto* auto_fit =
-      new ShortcutProperty("auto fit points", "Ctrl+F", "Auto-fit annotation to nearby points", shortcuts_property_);
-  auto_fit->createShortcut(this, render_panel, this, SLOT(autoFitPoints()));
-  auto* commit =
-      new ShortcutProperty("commit annotation", "return", "Commit current annotation and save", shortcuts_property_);
-  commit->createShortcut(this, render_panel, this, SLOT(commit()));
-
-  auto* undo = new ShortcutProperty("undo", "Ctrl+Z", "Undo last action", shortcuts_property_);
-  undo->createShortcut(this, render_panel, this, SLOT(undo()));
-
-  auto* play_pause =
-      new ShortcutProperty("toggle pause", "space", "Toggle play and pause state of rosbag play", shortcuts_property_);
-  play_pause->createShortcut(this, render_panel, this, SLOT(togglePlayPause()));
-
   cloud_display_ = createDisplay("rviz/PointCloud2");
   addDisplay(cloud_display_);
   cloud_display_->initialize(context_);
@@ -321,18 +292,50 @@ void AnnotateDisplay::onInitialize()
                                                this, SLOT(updateTopic()), this);
   open_file_property_ = new FileDialogProperty("Open", QString(), "Open an existing annotation file for editing", this,
                                                SLOT(openFile()), this);
+  open_file_property_->setIcon(rviz::loadPixmap(QString("package://annotate/icons/open.svg")));
   open_file_property_->setMode(FileDialogProperty::OpenFileName);
-  annotation_file_property_ = new FileDialogProperty("File", "annotate.yaml", "Annotation storage file", this,
-                                                     SLOT(updateAnnotationFile()), this);
+  annotation_file_property_ = new FileDialogProperty("Annotation File", "annotate.yaml", "Annotation storage file",
+                                                     this, SLOT(updateAnnotationFile()), this);
+  annotation_file_property_->setIcon(rviz::loadPixmap(QString("package://annotate/icons/save.svg")));
   annotation_file_property_->setMode(FileDialogProperty::SaveFileName);
   labels_property_ = new rviz::StringProperty("Labels", "object, unknown", "Available labels (separated by comma)",
                                               this, SLOT(updateLabels()), this);
+  labels_property_->setIcon(rviz::loadPixmap(QString("package://annotate/icons/labels.svg")));
   ignore_ground_property_ = new rviz::BoolProperty("Ignore Ground", false,
                                                    "Enable to ignore the ground direction (negative z) when "
                                                    "shrinking "
                                                    "or fitting boxes. This is useful if the point cloud contains "
                                                    "ground points that should not be included in annotations.",
                                                    this, SLOT(updateIgnoreGround()), this);
+
+  auto* render_panel = context_->getViewManager()->getRenderPanel();
+  shortcuts_property_ =
+      new BoolProperty("Shortcuts", true, "Keyboard shortcuts that affect the currently selected annotation", this,
+                       SLOT(updateShortcuts()), this);
+  shortcuts_property_->setDisableChildrenIfFalse(true);
+  QIcon icon = rviz::loadPixmap("package://annotate/icons/keyboard.svg");
+  shortcuts_property_->setIcon(icon);
+
+  auto* undo = new ShortcutProperty("undo", "Ctrl+Z", "Undo last action", shortcuts_property_);
+  undo->createShortcut(this, render_panel, this, SLOT(undo()));
+
+  auto* play_pause =
+      new ShortcutProperty("toggle pause", "space", "Toggle play and pause state of rosbag play", shortcuts_property_);
+  play_pause->createShortcut(this, render_panel, this, SLOT(togglePlayPause()));
+
+  auto* rotate_clockwise_ =
+      new ShortcutProperty("rotate clockwise", "right", "Rotate the current annotation clockwise", shortcuts_property_);
+  rotate_clockwise_->createShortcut(this, render_panel, this, SLOT(rotateClockwise()));
+  auto* rotate_anti_clockwise_ = new ShortcutProperty(
+      "rotate anti-clockwise", "left", "Rotate the current annotation anti-clockwise", shortcuts_property_);
+  rotate_anti_clockwise_->createShortcut(this, render_panel, this, SLOT(rotateAntiClockwise()));
+
+  auto* auto_fit =
+      new ShortcutProperty("auto fit points", "Ctrl+F", "Auto-fit annotation to nearby points", shortcuts_property_);
+  auto_fit->createShortcut(this, render_panel, this, SLOT(autoFitPoints()));
+  auto* commit =
+      new ShortcutProperty("commit annotation", "return", "Commit current annotation and save", shortcuts_property_);
+  commit->createShortcut(this, render_panel, this, SLOT(commit()));
 
   adjustView();
   expand();
