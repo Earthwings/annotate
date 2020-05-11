@@ -109,6 +109,10 @@ void AnnotateDisplay::handlePointcloud(const sensor_msgs::PointCloud2ConstPtr& c
 {
   cloud_ = cloud;
   time_ = cloud->header.stamp;
+  if (pause_after_data_change_->getBool())
+  {
+    sendPlaybackCommand(Pause);
+  }
   for (auto& marker : markers_)
   {
     marker->setTime(time_);
@@ -158,6 +162,10 @@ void AnnotateDisplay::commit()
   if (current_marker_)
   {
     current_marker_->commit();
+    if (play_after_commit_->getBool())
+    {
+      sendPlaybackCommand(Play);
+    }
   }
 }
 
@@ -177,7 +185,7 @@ void AnnotateDisplay::rotateAntiClockwise()
   }
 }
 
-void AnnotateDisplay::togglePlayPause()
+void AnnotateDisplay::sendPlaybackCommand(PlaybackCommand command)
 {
   if (!playback_client_.isValid())
   {
@@ -232,12 +240,12 @@ void AnnotateDisplay::togglePlayPause()
   if (playback_client_.isValid())
   {
     std_srvs::SetBool value;
-    value.request.data = true;
+    value.request.data = command == Toggle || command == Pause;
     if (playback_client_.call(value))
     {
-      if (!value.response.success)
+      if (command == Toggle && !value.response.success)
       {
-        value.request.data = false;
+        value.request.data = !value.request.data;
         if (playback_client_.call(value))
         {
           if (!value.response.success)
@@ -248,6 +256,11 @@ void AnnotateDisplay::togglePlayPause()
       }
     }
   }
+}
+
+void AnnotateDisplay::togglePlayPause()
+{
+  sendPlaybackCommand(Toggle);
 }
 
 void AnnotateDisplay::updateShortcuts()
@@ -308,10 +321,26 @@ void AnnotateDisplay::onInitialize()
                                                    "ground points that should not be included in annotations.",
                                                    this, SLOT(updateIgnoreGround()), this);
 
+  auto* automations =
+      new rviz::Property("Linked Actions", QVariant(), "Configure the interaction of related actions.", this);
+  automations->setIcon(rviz::loadPixmap("package://annotate/icons/automations.svg"));
+  shrink_after_resize_ = new rviz::BoolProperty("Shrink after resize", false,
+                                                "Shrink annotation box to fit points after adjusting its size with the "
+                                                "handles.",
+                                                automations);
+  shrink_before_commit_ = new rviz::BoolProperty(
+      "Shrink before commit", true, "Shrink annotation box to fit points when committing an annotation.", automations);
+  auto_fit_after_predict_ = new rviz::BoolProperty(
+      "Auto-fit after points change", false, "Auto-fit annotation boxes when the point cloud changes.", automations);
+  pause_after_data_change_ = new rviz::BoolProperty("Pause playback after points change", false,
+                                                    "Pause playback when the point cloud changes.", automations);
+  play_after_commit_ = new rviz::BoolProperty("Resume playback after commit", false,
+                                              "Resume playback after committing an annotation", automations);
+
   auto* render_panel = context_->getViewManager()->getRenderPanel();
   shortcuts_property_ =
-      new BoolProperty("Shortcuts", true, "Keyboard shortcuts that affect the currently selected annotation", this,
-                       SLOT(updateShortcuts()), this);
+      new BoolProperty("Keyboard Shortcuts", true, "Keyboard shortcuts that affect the currently selected annotation",
+                       this, SLOT(updateShortcuts()), this);
   shortcuts_property_->setDisableChildrenIfFalse(true);
   QIcon icon = rviz::loadPixmap("package://annotate/icons/keyboard.svg");
   shortcuts_property_->setIcon(icon);
@@ -696,6 +725,21 @@ TransformListener& AnnotateDisplay::transformListener()
 void AnnotateDisplay::setCurrentMarker(AnnotationMarker* marker)
 {
   current_marker_ = marker;
+}
+
+bool AnnotateDisplay::shrinkAfterResize() const
+{
+  return shrink_after_resize_ && shrink_after_resize_->getBool();
+}
+
+bool AnnotateDisplay::shrinkBeforeCommit() const
+{
+  return shrink_before_commit_ && shrink_before_commit_->getBool();
+}
+
+bool AnnotateDisplay::autoFitAfterPredict() const
+{
+  return auto_fit_after_predict_ && auto_fit_after_predict_->getBool();
 }
 
 }  // namespace annotate

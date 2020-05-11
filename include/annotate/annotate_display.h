@@ -43,6 +43,10 @@ public:
   sensor_msgs::PointCloud2ConstPtr cloud() const;
   tf::TransformListener& transformListener();
 
+  bool shrinkAfterResize() const;
+  bool shrinkBeforeCommit() const;
+  bool autoFitAfterPredict() const;
+
 private Q_SLOTS:
   void updateTopic();
   void updateLabels();
@@ -58,12 +62,20 @@ private Q_SLOTS:
   void updateShortcuts();
 
 private:
+  enum PlaybackCommand
+  {
+    Play,
+    Pause,
+    Toggle
+  };
+
   template <class T>
   void modifyChild(rviz::Property* parent, QString const& name, std::function<void(T*)> modifier);
   void adjustView();
   bool load(std::string const& file);
   void createNewAnnotation(const geometry_msgs::PointStamped::ConstPtr& message);
   void handlePointcloud(const sensor_msgs::PointCloud2ConstPtr& cloud);
+  void sendPlaybackCommand(PlaybackCommand command);
 
   ros::NodeHandle node_handle_;
   ros::Subscriber new_annotation_subscriber_;
@@ -90,5 +102,10 @@ private:
   AnnotationMarker* current_marker_{ nullptr };
   BoolProperty* shortcuts_property_{ nullptr };
   ros::ServiceClient playback_client_;
+  BoolProperty* shrink_after_resize_{ nullptr };
+  BoolProperty* shrink_before_commit_{ nullptr };
+  BoolProperty* auto_fit_after_predict_{ nullptr };
+  BoolProperty* play_after_commit_{ nullptr };
+  BoolProperty* pause_after_data_change_{ nullptr };
 };
 }  // namespace annotate

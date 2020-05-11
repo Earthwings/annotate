@@ -94,33 +94,6 @@ private:
                          std::numeric_limits<float>::min() };
   };
 
-  struct Automation
-  {
-    enum State
-    {
-      Disabled,
-      Enabled
-    };
-
-    Automation(const std::string& title, State initial_state);
-
-    std::string const title;
-    bool enabled{ false };
-    MenuHandler::EntryHandle handle;
-    AnnotationMarker* annotation_marker{ nullptr };
-    MenuHandler* menu_handler{ nullptr };
-
-    void update(MenuHandler* menu_handler, const MenuHandler::EntryHandle& parent);
-    void updateState(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-  };
-
-  struct Automations
-  {
-    Automation auto_fit_after_predict{ "After Time Changes: Auto-fit Box", Automation::Disabled };
-    Automation shrink_after_resize{ "After Resizing: Shrink to Points", Automation::Disabled };
-    Automation shrink_before_commit{ "Before Committing: Shrink to Points", Automation::Enabled };
-  };
-
   void updateMenu(const PointContext& context);
   void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void nextMode();
@@ -137,7 +110,6 @@ private:
   void setLabel(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void commit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void updateDescription(const PointContext& context);
-  void updateAutomations();
   void updateState(State state);
   bool hasMoved(geometry_msgs::Pose const& a, geometry_msgs::Pose const& b) const;
   void saveMove();
@@ -178,7 +150,6 @@ private:
   State state_{ Hidden };
   std::stack<UndoState> undo_stack_;
   bool ignore_ground_{ false };
-  Automations automations_;
 };
 
 }  // namespace annotate

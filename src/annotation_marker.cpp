@@ -132,9 +132,6 @@ AnnotationMarker::AnnotationMarker(AnnotateDisplay* annotate_display, const shar
   : server_(server), id_(marker_id), annotate_display_(annotate_display)
 {
   time_ = trackInstance.center.stamp_;
-  automations_.auto_fit_after_predict.annotation_marker = this;
-  automations_.shrink_after_resize.annotation_marker = this;
-  automations_.shrink_before_commit.annotation_marker = this;
   createMarker(trackInstance);
 }
 
@@ -161,11 +158,6 @@ void AnnotationMarker::updateMenu(const PointContext& context)
   menu_handler_.setCheckState(handle, mode_ == Rotate ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
   handle = menu_handler_.insert(mode_menu, "Resize", boost::bind(&AnnotationMarker::enableResizeControl, this, _1));
   menu_handler_.setCheckState(handle, mode_ == Resize ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
-
-  MenuHandler::EntryHandle automations_menu = menu_handler_.insert("Automations");
-  automations_.auto_fit_after_predict.update(&menu_handler_, automations_menu);
-  automations_.shrink_after_resize.update(&menu_handler_, automations_menu);
-  automations_.shrink_before_commit.update(&menu_handler_, automations_menu);
 
   labels_.clear();
   if (!label_keys_.empty())
@@ -196,31 +188,6 @@ void AnnotationMarker::updateMenu(const PointContext& context)
   menu_handler_.insert(commit_title, boost::bind(&AnnotationMarker::commit, this, _1));
 
   menu_handler_.apply(*server_, marker_.name);
-}
-
-AnnotationMarker::Automation::Automation(const string& title, State initial_state)
-  : title(title), enabled(initial_state == Enabled)
-{
-  // does nothing
-}
-
-void AnnotationMarker::Automation::update(interactive_markers::MenuHandler* handler,
-                                          const interactive_markers::MenuHandler::EntryHandle& parent)
-{
-  menu_handler = handler;
-  handle = menu_handler->insert(parent, title, boost::bind(&AnnotationMarker::Automation::updateState, this, _1));
-  menu_handler->setCheckState(handle, enabled ? MenuHandler::CHECKED : MenuHandler::UNCHECKED);
-}
-
-void AnnotationMarker::Automation::updateState(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
-{
-  interactive_markers::MenuHandler::CheckState check_state;
-  menu_handler->getCheckState(handle, check_state);
-  enabled = check_state == interactive_markers::MenuHandler::UNCHECKED;
-  if (annotation_marker)
-  {
-    annotation_marker->push();
-  }
 }
 
 void AnnotationMarker::processFeedback(const InteractiveMarkerFeedbackConstPtr& feedback)
@@ -295,7 +262,7 @@ void AnnotationMarker::changeSize(const Pose& new_pose)
     new_center.setOrigin(last_pose_ * (0.5 * diff));
     poseTFToMsg(new_center, marker_.pose);
 
-    if (automations_.shrink_after_resize.enabled)
+    if (annotate_display_->shrinkAfterResize())
     {
       auto const context = analyzePoints();
       if (context.points_inside)
@@ -702,7 +669,7 @@ void AnnotationMarker::rotateYaw(double delta_rad)
 {
   pull();
   Quaternion rotation;
-  quaternionMsgToTF(marker_.pose.orientation, rotation); 
+  quaternionMsgToTF(marker_.pose.orientation, rotation);
   Quaternion delta;
   delta.setRPY(0.0, 0.0, delta_rad);
   auto rotated = delta * rotation;
@@ -713,45 +680,45 @@ void AnnotationMarker::rotateYaw(double delta_rad)
 
 void AnnotationMarker::commit()
 {
-    pull();
-    if (automations_.shrink_before_commit.enabled)
+  pull();
+  if (annotate_display_->shrinkBeforeCommit())
+  {
+    auto const context = analyzePoints();
+    if (context.points_inside)
     {
-      auto const context = analyzePoints();
-      if (context.points_inside)
-      {
-        saveForUndo("shrink to points");
-        shrinkTo(context);
-        updateState(Modified);
-      }
+      saveForUndo("shrink to points");
+      shrinkTo(context);
+      updateState(Modified);
     }
+  }
 
-    TrackInstance instance;
-    instance.label = label_;
+  TrackInstance instance;
+  instance.label = label_;
 
-    Transform transform;
-    poseMsgToTF(marker_.pose, transform);
-    instance.center = StampedTransform(transform, time_, marker_.header.frame_id, "current_annotation");
+  Transform transform;
+  poseMsgToTF(marker_.pose, transform);
+  instance.center = StampedTransform(transform, time_, marker_.header.frame_id, "current_annotation");
 
-    if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
-    {
-      auto& box = marker_.controls.front().markers.front();
-      vector3MsgToTF(box.scale, instance.box_size);
-    }
+  if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
+  {
+    auto& box = marker_.controls.front().markers.front();
+    vector3MsgToTF(box.scale, instance.box_size);
+  }
 
-    tf_broadcaster_.sendTransform(instance.center);
+  tf_broadcaster_.sendTransform(instance.center);
 
-    track_.erase(
-        remove_if(track_.begin(), track_.end(), [this](const TrackInstance& t) { return t.center.stamp_ == time_; }),
-        track_.end());
-    track_.push_back(instance);
-    sort(track_.begin(), track_.end(),
-         [](TrackInstance const& a, TrackInstance const& b) -> bool { return a.center.stamp_ < b.center.stamp_; });
-    if (annotate_display_->save())
-    {
-      updateState(Committed);
-    }
-    annotate_display_->publishTrackMarkers();
-    push();
+  track_.erase(
+      remove_if(track_.begin(), track_.end(), [this](const TrackInstance& t) { return t.center.stamp_ == time_; }),
+      track_.end());
+  track_.push_back(instance);
+  sort(track_.begin(), track_.end(),
+       [](TrackInstance const& a, TrackInstance const& b) -> bool { return a.center.stamp_ < b.center.stamp_; });
+  if (annotate_display_->save())
+  {
+    updateState(Committed);
+  }
+  annotate_display_->publishTrackMarkers();
+  push();
 }
 
 void AnnotationMarker::commit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
@@ -867,7 +834,7 @@ void AnnotationMarker::setTime(const ros::Time& time)
   {
     auto const transform = estimatePose(track[0].center, track[1].center, time);
     poseTFToMsg(transform, marker_.pose);
-    if (automations_.auto_fit_after_predict.enabled)
+    if (annotate_display_->autoFitAfterPredict())
     {
       fitNearbyPoints();
     }

@@ -22,5 +22,6 @@ The following icons originate from [Material Design](https://material.io). They 
 * <a href="labels.svg"><img src="labels.svg" height="18"> ```labels.svg```</a> from [category](https://material.io/resources/icons/?icon=category&style=outline)
 * <a href="toggle-pause.svg"><img src="toggle-pause.svg" height="18"> ```toggle-pause.svg```</a> from [pause](https://material.io/resources/icons/?icon=pause&style=outline)
 * <a href="undo.svg"><img src="undo.svg" height="18"> ```undo.svg```</a> from [undo](https://material.io/resources/icons/?icon=undo&style=outline)
+* <a href="automations.svg"><img src="automations.svg" height="18"> ```link.svg```</a> from [link](https://material.io/resources/icons/?icon=link&style=outline)
 
 The icons ```tags.svg``` and ```labels.svg``` have been modified slightly to reduce the stroke width.
