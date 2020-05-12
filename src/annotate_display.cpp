@@ -11,7 +11,7 @@
 #include <QColor>
 #include <QShortcut>
 #include <random>
-#include <experimental/filesystem>
+#include <QFileInfo>
 #include <rviz/default_plugin/point_cloud2_display.h>
 #include <rviz/default_plugin/marker_array_display.h>
 #include <rviz/default_plugin/interactive_marker_display.h>
@@ -100,6 +100,7 @@ void AnnotateDisplay::createNewAnnotation(const geometry_msgs::PointStamped::Con
   ++current_marker_id_;
   auto marker = make_shared<AnnotationMarker>(this, server_, instance, current_marker_id_);
   marker->setLabels(labels_);
+  marker->setTags(tags_);
   marker->setIgnoreGround(ignore_ground_property_->getBool());
   marker->setTime(time_);
   markers_.push_back(marker);
@@ -314,6 +315,9 @@ void AnnotateDisplay::onInitialize()
   labels_property_ = new rviz::StringProperty("Labels", "object, unknown", "Available labels (separated by comma)",
                                               this, SLOT(updateLabels()), this);
   labels_property_->setIcon(rviz::loadPixmap(QString("package://annotate/icons/labels.svg")));
+  tags_property_ = new rviz::StringProperty("Tags", "easy, moderate, hard", "Available tags (separated by comma)", this,
+                                            SLOT(updateTags()), this);
+  tags_property_->setIcon(rviz::loadPixmap(QString("package://annotate/icons/tags.svg")));
   ignore_ground_property_ = new rviz::BoolProperty("Ignore Ground", false,
                                                    "Enable to ignore the ground direction (negative z) when "
                                                    "shrinking "
@@ -459,6 +463,20 @@ void AnnotateDisplay::updateLabels()
   }
 }
 
+void AnnotateDisplay::updateTags()
+{
+  tags_.clear();
+  auto const tags = tags_property_->getString().split(',', QString::SkipEmptyParts);
+  for (auto const& tag : tags)
+  {
+    tags_.push_back(tag.trimmed().toStdString());
+  }
+  for (auto const& marker : markers_)
+  {
+    marker->setTags(tags_);
+  }
+}
+
 void AnnotateDisplay::openFile()
 {
   auto const file = open_file_property_->getValue().toString();
@@ -480,17 +498,17 @@ void AnnotateDisplay::openFile()
 
 void AnnotateDisplay::updateAnnotationFile()
 {
-  if (filename_.empty())
+  auto const file = annotation_file_property_->getValue().toString();
+  if (filename_.empty() && QFileInfo::exists(file))
   {
-    auto const file = annotation_file_property_->getValue().toString().toStdString();
-    if (load(file))
+    if (load(file.toStdString()))
     {
-      filename_ = file;
+      filename_ = file.toStdString();
     }
   }
   else
   {
-    filename_ = annotation_file_property_->getValue().toString().toStdString();
+    filename_ = file.toStdString();
     save();
   }
 }
@@ -537,6 +555,23 @@ bool AnnotateDisplay::load(string const& file)
     }
   }
   labels_property_->setStdString(joined_labels);
+  tags_.clear();
+  Node tags = node["tags"];
+  string joined_tags;
+  for (size_t i = 0; i < tags.size(); ++i)
+  {
+    auto const value = tags[i].as<string>();
+    tags_.push_back(value);
+    if (joined_tags.empty())
+    {
+      joined_tags = value;
+    }
+    else
+    {
+      joined_tags += ", " + value;
+    }
+  }
+  tags_property_->setStdString(joined_tags);
   Node tracks = node["tracks"];
   size_t annotations = 0;
   for (size_t i = 0; i < tracks.size(); ++i)
@@ -550,6 +585,13 @@ bool AnnotateDisplay::load(string const& file)
       Node inst = t[j];
       TrackInstance instance;
       instance.label = inst["label"].as<string>();
+      if (inst["tags"])
+      {
+        for (auto const& tag : inst["tags"].as<vector<string>>())
+        {
+          instance.tags.push_back(tag);
+        }
+      }
 
       Node header = inst["header"];
       instance.center.frame_id_ = header["frame_id"].as<string>();
@@ -599,6 +641,10 @@ bool AnnotateDisplay::save()
   {
     node["labels"].push_back(label);
   }
+  for (auto const& tag : tags_)
+  {
+    node["tags"].push_back(tag);
+  }
   for (auto const& marker : markers_)
   {
     Node annotation;
@@ -607,6 +653,13 @@ bool AnnotateDisplay::save()
     {
       Node i;
       i["label"] = instance.label;
+
+      Node tags;
+      for (auto const& tag : instance.tags)
+      {
+        tags.push_back(tag);
+      }
+      i["tags"] = tags;
 
       Node header;
       header["frame_id"] = instance.center.frame_id_;

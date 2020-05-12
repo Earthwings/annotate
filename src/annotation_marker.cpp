@@ -145,6 +145,16 @@ void AnnotationMarker::setLabels(const std::vector<std::string>& labels)
   }
 }
 
+void AnnotationMarker::setTags(const std::vector<std::string>& tags)
+{
+  tag_keys_ = tags;
+  if (state_ != Hidden)
+  {
+    pull();
+    push();
+  }
+}
+
 void AnnotationMarker::updateMenu(const PointContext& context)
 {
   menu_handler_ = MenuHandler();
@@ -168,6 +178,19 @@ void AnnotationMarker::updateMenu(const PointContext& context)
       auto const handle = menu_handler_.insert(label_menu, label, boost::bind(&AnnotationMarker::setLabel, this, _1));
       labels_[handle] = label;
       menu_handler_.setCheckState(handle, label_ == label ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
+    }
+  }
+
+  tags_menu_.clear();
+  if (!tag_keys_.empty())
+  {
+    MenuHandler::EntryHandle tags_menu = menu_handler_.insert("Tags");
+    for (auto const& tag : tag_keys_)
+    {
+      auto const handle = menu_handler_.insert(tags_menu, tag, boost::bind(&AnnotationMarker::setTag, this, _1));
+      tags_menu_[handle] = tag;
+      auto const has_tag = find(tags_.cbegin(), tags_.cend(), tag) != tags_.cend();
+      menu_handler_.setCheckState(handle, has_tag ? MenuHandler::CHECKED : MenuHandler::NO_CHECKBOX);
     }
   }
 
@@ -231,6 +254,7 @@ void AnnotationMarker::processFeedback(const InteractiveMarkerFeedbackConstPtr& 
         state.box_size = boxSize();
         state.state = state_;
         state.label = label_;
+        state.tags = tags_;
         undo_stack_.push(state);
         changeSize(pose);
         can_change_size_ = false;
@@ -330,6 +354,19 @@ void AnnotationMarker::updateDescription(const PointContext& context)
 {
   stringstream stream;
   stream << label_ << " #" << id_;
+  if (!tags_.empty())
+  {
+    stream << " (";
+    auto iter = tags_.begin();
+    stream << *iter;
+    ++iter;
+    for (; iter != tags_.cend(); ++iter)
+    {
+      stream << ", ";
+      stream << *iter;
+    }
+    stream << ")";
+  }
   if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
   {
     auto const& box = marker_.controls.front().markers.front();
@@ -419,6 +456,29 @@ void AnnotationMarker::setLabel(const visualization_msgs::InteractiveMarkerFeedb
       updateState(Modified);
       push();
     }
+  }
+}
+
+void AnnotationMarker::setTag(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+{
+  if (feedback->event_type == InteractiveMarkerFeedback::MENU_SELECT)
+  {
+    pull();
+    MenuHandler::CheckState check_state;
+    menu_handler_.getCheckState(feedback->menu_entry_id, check_state);
+    auto const tag = tags_menu_[feedback->menu_entry_id];
+    if (check_state == MenuHandler::CHECKED)
+    {
+      saveForUndo("remove tag " + tag);
+      tags_.erase(remove(tags_.begin(), tags_.end(), tag), tags_.end());
+    }
+    else
+    {
+      saveForUndo("add tag " + tag);
+      tags_.push_back(tag);
+    }
+    updateState(Modified);
+    push();
   }
 }
 
@@ -530,7 +590,7 @@ void AnnotationMarker::saveForUndo(const string& description)
   if (!undo_stack_.empty())
   {
     auto const& last_state = undo_stack_.top();
-    if (last_state.state == state_ && last_state.label == label_ && last_state.box_size == boxSize() &&
+    if (last_state.state == state_ && last_state.label == label_ && last_state.tags == tags_ && last_state.box_size == boxSize() &&
         !hasMoved(last_state.pose, marker_.pose))
     {
       return;
@@ -544,6 +604,7 @@ void AnnotationMarker::saveForUndo(const string& description)
   state.box_size = boxSize();
   state.state = state_;
   state.label = label_;
+  state.tags = tags_;
   undo_stack_.push(state);
 }
 
@@ -557,6 +618,7 @@ void AnnotationMarker::undo()
   auto const state = undo_stack_.top();
   marker_.pose = state.pose;
   label_ = state.label;
+  tags_ = state.tags;
   undo_stack_.pop();
   setBoxSize(state.box_size);
   updateState(state.state);
@@ -694,6 +756,7 @@ void AnnotationMarker::commit()
 
   TrackInstance instance;
   instance.label = label_;
+  instance.tags = tags_;
 
   Transform transform;
   poseMsgToTF(marker_.pose, transform);
@@ -817,6 +880,7 @@ void AnnotationMarker::setTime(const ros::Time& time)
     if (instance.timeTo(time) < 0.01)
     {
       label_ = instance.label;
+      tags_ = instance.tags;
       updateState(Committed);
       poseTFToMsg(instance.center, marker_.pose);
       setBoxSize(instance.box_size);

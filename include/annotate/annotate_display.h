@@ -50,6 +50,7 @@ public:
 private Q_SLOTS:
   void updateTopic();
   void updateLabels();
+  void updateTags();
   void openFile();
   void updateAnnotationFile();
   void updateIgnoreGround();
@@ -85,6 +86,7 @@ private:
   size_t current_marker_id_{ 0 };
   std::vector<AnnotationMarker::Ptr> markers_;
   std::vector<std::string> labels_;
+  std::vector<std::string> tags_;
   std::string filename_;
   ros::Time time_;
   ros::Time last_track_publish_time_;
@@ -94,6 +96,7 @@ private:
   rviz::RosTopicProperty* topic_property_{ nullptr };
   rviz::BoolProperty* ignore_ground_property_{ nullptr };
   rviz::StringProperty* labels_property_{ nullptr };
+  rviz::StringProperty* tags_property_{ nullptr };
   FileDialogProperty* open_file_property_{ nullptr };
   FileDialogProperty* annotation_file_property_{ nullptr };
   rviz::Display* cloud_display_{ nullptr };

@@ -22,6 +22,7 @@ void setRotation(geometry_msgs::Quaternion& quaternion, double x, double y, doub
 struct TrackInstance
 {
   std::string label;
+  std::vector<std::string> tags;
   tf::StampedTransform center;
   tf::Vector3 box_size;
 
@@ -46,6 +47,7 @@ public:
   void setTrack(const Track& track);
   void setIgnoreGround(bool enabled);
   void setLabels(const std::vector<std::string>& labels);
+  void setTags(const std::vector<std::string>& tags);
 
   void setTime(const ros::Time& time);
   void autoFit();
@@ -80,6 +82,7 @@ private:
     geometry_msgs::Pose pose;
     tf::Vector3 box_size;
     std::string label;
+    std::vector<std::string> tags;
     State state;
   };
 
@@ -108,6 +111,7 @@ private:
   void enableRotationControl(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void createMarker(const TrackInstance& instance);
   void setLabel(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void setTag(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void commit(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void updateDescription(const PointContext& context);
   void updateState(State state);
@@ -143,6 +147,9 @@ private:
   std::vector<std::string> label_keys_;
   std::map<MenuHandler::EntryHandle, std::string> labels_;
   std::string label_;
+  std::vector<std::string> tag_keys_;
+  std::map<MenuHandler::EntryHandle, std::string> tags_menu_;
+  std::vector<std::string> tags_;
   Track track_;
   AnnotateDisplay* annotate_display_;
   ros::Time time_;
