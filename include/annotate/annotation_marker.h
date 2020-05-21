@@ -50,6 +50,7 @@ public:
   void setTags(const std::vector<std::string>& tags);
 
   void setTime(const ros::Time& time);
+  void shrinkToPoints();
   void autoFit();
   void undo();
   void commit();

@@ -54,6 +54,7 @@ private Q_SLOTS:
   void openFile();
   void updateAnnotationFile();
   void updateIgnoreGround();
+  void shrinkToPoints();
   void autoFitPoints();
   void undo();
   void commit();

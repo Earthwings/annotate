@@ -142,6 +142,14 @@ void AnnotateDisplay::modifyChild(rviz::Property* parent, QString const& name, s
   }
 }
 
+void AnnotateDisplay::shrinkToPoints()
+{
+  if (current_marker_)
+  {
+    current_marker_->shrinkToPoints();
+  }
+}
+
 void AnnotateDisplay::autoFitPoints()
 {
   if (current_marker_)
@@ -363,6 +371,9 @@ void AnnotateDisplay::onInitialize()
       "rotate anti-clockwise", "left", "Rotate the current annotation anti-clockwise", shortcuts_property_);
   rotate_anti_clockwise_->createShortcut(this, render_panel, this, SLOT(rotateAntiClockwise()));
 
+  auto* shrink =
+      new ShortcutProperty("shrink to points", "Ctrl+B", "Shrink annotation box to fit points", shortcuts_property_);
+  shrink->createShortcut(this, render_panel, this, SLOT(shrinkToPoints()));
   auto* auto_fit =
       new ShortcutProperty("auto fit points", "Ctrl+F", "Auto-fit annotation to nearby points", shortcuts_property_);
   auto_fit->createShortcut(this, render_panel, this, SLOT(autoFitPoints()));

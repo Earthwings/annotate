@@ -1,14 +1,14 @@
-#include <annotate/annotation_marker.h>
 #include <annotate/annotate_display.h>
-#include <sstream>
-#include <visualization_msgs/MarkerArray.h>
-#include <pcl_conversions/pcl_conversions.h>
+#include <annotate/annotation_marker.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <QColor>
 #include <random>
+#include <sstream>
 
 using namespace visualization_msgs;
 using namespace interactive_markers;
@@ -500,15 +500,7 @@ void AnnotationMarker::shrinkTo(const PointContext& context)
 
 void AnnotationMarker::shrink(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
-  pull();
-  auto const context = analyzePoints();
-  if (context.points_inside)
-  {
-    saveForUndo("shrink to points");
-    shrinkTo(context);
-    updateState(Modified);
-    push();
-  }
+  shrinkToPoints();
 }
 
 bool AnnotationMarker::fitNearbyPoints()
@@ -534,6 +526,19 @@ bool AnnotationMarker::fitNearbyPoints()
   }
 
   return false;
+}
+
+void AnnotationMarker::shrinkToPoints()
+{
+  pull();
+  auto const context = analyzePoints();
+  if (context.points_inside)
+  {
+    saveForUndo("shrink to points");
+    shrinkTo(context);
+    updateState(Modified);
+    push();
+  }
 }
 
 void AnnotationMarker::autoFit()
@@ -590,8 +595,8 @@ void AnnotationMarker::saveForUndo(const string& description)
   if (!undo_stack_.empty())
   {
     auto const& last_state = undo_stack_.top();
-    if (last_state.state == state_ && last_state.label == label_ && last_state.tags == tags_ && last_state.box_size == boxSize() &&
-        !hasMoved(last_state.pose, marker_.pose))
+    if (last_state.state == state_ && last_state.label == label_ && last_state.tags == tags_ &&
+        last_state.box_size == boxSize() && !hasMoved(last_state.pose, marker_.pose))
     {
       return;
     }
