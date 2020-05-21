@@ -280,7 +280,7 @@ void AnnotationMarker::changeSize(const Pose& new_pose)
     auto& box = marker_.controls.front().markers.front();
     Vector3 scale;
     vector3MsgToTF(box.scale, scale);
-    scale.m_floats[max_component] = max(0.05, scale[max_component] + change);
+    scale.m_floats[max_component] = max(padding_, scale[max_component] + change);
     setBoxSize(scale);
     Pose new_center = new_pose;
     new_center.setOrigin(last_pose_ * (0.5 * diff));
@@ -381,9 +381,20 @@ void AnnotationMarker::updateDescription(const PointContext& context)
     }
 
     stream << setiosflags(ios::fixed) << setprecision(2);
-    stream << "\n" << box.scale.x << " (+" << diff.x() << ")";
-    stream << " x " << box.scale.y << " (+" << diff.y() << ")";
-    stream << " x " << box.scale.z << " (+" << diff.z() << ")";
+    bool const fits_tight = (diff - Vector3(padding_, padding_, padding_)).fuzzyZero();
+    if (fits_tight)
+    {
+      stream << "\n" << box.scale.x;
+      stream << " x " << box.scale.y;
+      stream << " x " << box.scale.z;
+      stream << " (well-fitting)";
+    }
+    else
+    {
+      stream << "\n" << box.scale.x << " (+" << diff.x() << ")";
+      stream << " x " << box.scale.y << " (+" << diff.y() << ")";
+      stream << " x " << box.scale.z << " (+" << diff.z() << ")";
+    }
   }
 
   stream << "\n" << context.points_inside << " points inside, ";
@@ -493,8 +504,7 @@ void AnnotationMarker::shrinkTo(const PointContext& context)
   Stamped<Point> output;
   annotate_display_->transformListener().transformPoint(marker_.header.frame_id, input, output);
   pointTFToMsg(output, marker_.pose.position);
-  double const offset = 0.05;
-  Vector3 const margin(offset, offset, offset);
+  Vector3 const margin(padding_, padding_, padding_);
   setBoxSize(margin + context.maximum - context.minimum);
 }
 
@@ -516,7 +526,7 @@ bool AnnotationMarker::fitNearbyPoints()
 
   for (int i = 0; i < 4; ++i)
   {
-    resize(0.25);
+    resize(margin_);
     auto const context = analyzePoints();
     if (context.points_nearby == 0)
     {
@@ -693,7 +703,7 @@ AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
       vector3MsgToTF(box.scale, box_min);
       box_min = -0.5 * box_min;
       Vector3 const box_max = -box_min;
-      Vector3 offset(0.25, 0.25, 0.25);
+      Vector3 offset(margin_, margin_, margin_);
       Vector3 const nearby_max = box_max + offset;
       Vector3 nearby_min = box_min - offset;
       if (ignore_ground_)
@@ -916,6 +926,20 @@ void AnnotationMarker::setTime(const ros::Time& time)
 void AnnotationMarker::setTrack(const Track& track)
 {
   track_ = track;
+}
+
+void AnnotationMarker::setPadding(double padding)
+{
+  padding_ = padding;
+  pull();
+  push();
+}
+
+void AnnotationMarker::setMargin(double margin)
+{
+  margin_ = margin;
+  pull();
+  push();
 }
 
 void AnnotationMarker::setIgnoreGround(bool enabled)

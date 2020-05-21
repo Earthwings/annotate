@@ -45,6 +45,8 @@ public:
   int id() const;
   Track const& track() const;
   void setTrack(const Track& track);
+  void setPadding(double padding);
+  void setMargin(double margin);
   void setIgnoreGround(bool enabled);
   void setLabels(const std::vector<std::string>& labels);
   void setTags(const std::vector<std::string>& tags);
@@ -158,6 +160,8 @@ private:
   State state_{ Hidden };
   std::stack<UndoState> undo_stack_;
   bool ignore_ground_{ false };
+  double padding_ { 0.05 };
+  double margin_ { 0.25 };
 };
 
 }  // namespace annotate

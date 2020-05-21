@@ -1,26 +1,26 @@
 #pragma once
 
-#include "annotation_marker.h"
-#include "file_dialog_property.h"
-#include "shortcut_property.h"
-#include <ros/ros.h>
+#include <geometry_msgs/PointStamped.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <interactive_markers/menu_handler.h>
-#include <tf/tf.h>
-#include <geometry_msgs/PointStamped.h>
-#include <interactive_markers/menu_handler.h>
-#include <memory>
-#include <stack>
+#include <ros/ros.h>
+#include <rviz/display_group.h>
+#include <rviz/properties/bool_property.h>
+#include <rviz/properties/float_property.h>
+#include <rviz/properties/ros_topic_property.h>
+#include <rviz/properties/string_property.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <tf/tf.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include <QTime>
-#include <limits>
-#include <rviz/display_group.h>
-#include <rviz/properties/string_property.h>
-#include <rviz/properties/bool_property.h>
-#include <rviz/properties/ros_topic_property.h>
 #include <functional>
+#include <limits>
+#include <memory>
+#include <stack>
+#include "annotation_marker.h"
+#include "file_dialog_property.h"
+#include "shortcut_property.h"
 
 namespace annotate
 {
@@ -53,6 +53,8 @@ private Q_SLOTS:
   void updateTags();
   void openFile();
   void updateAnnotationFile();
+  void updatePadding();
+  void updateMargin();
   void updateIgnoreGround();
   void shrinkToPoints();
   void autoFitPoints();
@@ -104,12 +106,14 @@ private:
   rviz::Display* marker_display_{ nullptr };
   rviz::Display* track_display_{ nullptr };
   AnnotationMarker* current_marker_{ nullptr };
-  BoolProperty* shortcuts_property_{ nullptr };
+  rviz::BoolProperty* shortcuts_property_{ nullptr };
   ros::ServiceClient playback_client_;
-  BoolProperty* shrink_after_resize_{ nullptr };
-  BoolProperty* shrink_before_commit_{ nullptr };
-  BoolProperty* auto_fit_after_predict_{ nullptr };
-  BoolProperty* play_after_commit_{ nullptr };
-  BoolProperty* pause_after_data_change_{ nullptr };
+  rviz::BoolProperty* shrink_after_resize_{ nullptr };
+  rviz::BoolProperty* shrink_before_commit_{ nullptr };
+  rviz::BoolProperty* auto_fit_after_predict_{ nullptr };
+  rviz::BoolProperty* play_after_commit_{ nullptr };
+  rviz::BoolProperty* pause_after_data_change_{ nullptr };
+  rviz::FloatProperty* padding_property_{ nullptr };
+  rviz::FloatProperty* margin_property_{ nullptr };
 };
 }  // namespace annotate

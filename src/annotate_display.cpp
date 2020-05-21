@@ -1,23 +1,23 @@
 #include <annotate/annotate_display.h>
-#include <sstream>
-#include <yaml-cpp/yaml.h>
-#include <fstream>
-#include <visualization_msgs/MarkerArray.h>
-#include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
-#include <QColor>
-#include <QShortcut>
-#include <random>
-#include <QFileInfo>
-#include <rviz/default_plugin/point_cloud2_display.h>
-#include <rviz/default_plugin/marker_array_display.h>
 #include <rviz/default_plugin/interactive_marker_display.h>
-#include <rviz/view_manager.h>
+#include <rviz/default_plugin/marker_array_display.h>
+#include <rviz/default_plugin/point_cloud2_display.h>
 #include <rviz/render_panel.h>
+#include <rviz/view_manager.h>
 #include <std_srvs/SetBool.h>
+#include <visualization_msgs/MarkerArray.h>
+#include <yaml-cpp/yaml.h>
+#include <QColor>
+#include <QFileInfo>
+#include <QShortcut>
+#include <fstream>
+#include <random>
+#include <sstream>
 
 using namespace visualization_msgs;
 using namespace interactive_markers;
@@ -101,6 +101,8 @@ void AnnotateDisplay::createNewAnnotation(const geometry_msgs::PointStamped::Con
   auto marker = make_shared<AnnotationMarker>(this, server_, instance, current_marker_id_);
   marker->setLabels(labels_);
   marker->setTags(tags_);
+  marker->setPadding(padding_property_->getFloat());
+  marker->setMargin(margin_property_->getFloat());
   marker->setIgnoreGround(ignore_ground_property_->getBool());
   marker->setTime(time_);
   markers_.push_back(marker);
@@ -310,28 +312,40 @@ void AnnotateDisplay::onInitialize()
   track_display_->setTopic("/tracks", "visualization_msgs/MarkerArray");
   track_display_->setEnabled(true);
 
-  topic_property_ = new rviz::RosTopicProperty("Topic", QString(), "sensor_msgs/PointCloud2", "Point cloud to annotate",
-                                               this, SLOT(updateTopic()), this);
   open_file_property_ = new FileDialogProperty("Open", QString(), "Open an existing annotation file for editing", this,
                                                SLOT(openFile()), this);
   open_file_property_->setIcon(rviz::loadPixmap(QString("package://annotate/icons/open.svg")));
   open_file_property_->setMode(FileDialogProperty::OpenFileName);
+
+  auto* settings = new rviz::Property("Settings", QVariant(), "Configure annotation properties", this);
+  topic_property_ = new rviz::RosTopicProperty("Topic", QString(), "sensor_msgs/PointCloud2", "Point cloud to annotate",
+                                               settings, SLOT(updateTopic()), this);
   annotation_file_property_ = new FileDialogProperty("Annotation File", "annotate.yaml", "Annotation storage file",
-                                                     this, SLOT(updateAnnotationFile()), this);
+                                                     settings, SLOT(updateAnnotationFile()), this);
   annotation_file_property_->setIcon(rviz::loadPixmap(QString("package://annotate/icons/save.svg")));
   annotation_file_property_->setMode(FileDialogProperty::SaveFileName);
   labels_property_ = new rviz::StringProperty("Labels", "object, unknown", "Available labels (separated by comma)",
-                                              this, SLOT(updateLabels()), this);
+                                              settings, SLOT(updateLabels()), this);
   labels_property_->setIcon(rviz::loadPixmap(QString("package://annotate/icons/labels.svg")));
-  tags_property_ = new rviz::StringProperty("Tags", "easy, moderate, hard", "Available tags (separated by comma)", this,
-                                            SLOT(updateTags()), this);
+  tags_property_ = new rviz::StringProperty("Tags", "easy, moderate, hard", "Available tags (separated by comma)",
+                                            settings, SLOT(updateTags()), this);
   tags_property_->setIcon(rviz::loadPixmap(QString("package://annotate/icons/tags.svg")));
+  padding_property_ = new rviz::FloatProperty("Padding", 0.05,
+                                              "Minimum distance between annotation bounding box and inner points for "
+                                              "actions "
+                                              "like shrink to points and auto-fit points.",
+                                              settings, SLOT(updatePadding()), this);
+  margin_property_ = new rviz::FloatProperty("Margin", 0.25,
+                                             "Maximum distance between annotation bounding box and outer points to be "
+                                             "considered nearby.",
+                                             settings, SLOT(updateMargin()), this);
+
   ignore_ground_property_ = new rviz::BoolProperty("Ignore Ground", false,
                                                    "Enable to ignore the ground direction (negative z) when "
                                                    "shrinking "
                                                    "or fitting boxes. This is useful if the point cloud contains "
                                                    "ground points that should not be included in annotations.",
-                                                   this, SLOT(updateIgnoreGround()), this);
+                                                   settings, SLOT(updateIgnoreGround()), this);
 
   auto* automations =
       new rviz::Property("Linked Actions", QVariant(), "Configure the interaction of related actions.", this);
@@ -524,6 +538,24 @@ void AnnotateDisplay::updateAnnotationFile()
   }
 }
 
+void AnnotateDisplay::updatePadding()
+{
+  auto const padding = padding_property_->getFloat();
+  for (auto const& marker : markers_)
+  {
+    marker->setPadding(padding);
+  }
+}
+
+void AnnotateDisplay::updateMargin()
+{
+  auto const margin = margin_property_->getFloat();
+  for (auto const& marker : markers_)
+  {
+    marker->setMargin(margin);
+  }
+}
+
 void AnnotateDisplay::updateIgnoreGround()
 {
   auto const ignore_ground = ignore_ground_property_->getBool();
@@ -630,6 +662,10 @@ bool AnnotateDisplay::load(string const& file)
       auto marker = make_shared<AnnotationMarker>(this, server_, track.front(), id);
       marker->setLabels(labels_);
       marker->setTrack(track);
+      auto const padding = padding_property_ ? padding_property_->getFloat() : 0.05f;
+      marker->setPadding(padding);
+      auto const margin = margin_property_ ? margin_property_->getFloat() : 0.25f;
+      marker->setMargin(margin);
       bool ignore_ground = ignore_ground_property_ ? ignore_ground_property_->getBool() : false;
       marker->setIgnoreGround(ignore_ground);
       marker->setTime(time_);
