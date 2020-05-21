@@ -663,6 +663,7 @@ bool AnnotateDisplay::load(string const& file)
       current_marker_id_ = max(current_marker_id_, id);
       auto marker = make_shared<AnnotationMarker>(this, server_, track.front(), id);
       marker->setLabels(labels_);
+      marker->setTags(tags_);
       marker->setTrack(track);
       auto const padding = padding_property_ ? padding_property_->getFloat() : 0.05f;
       marker->setPadding(padding);
