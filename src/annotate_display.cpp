@@ -335,10 +335,12 @@ void AnnotateDisplay::onInitialize()
                                               "actions "
                                               "like shrink to points and auto-fit points.",
                                               settings, SLOT(updatePadding()), this);
+  padding_property_->setMin(0.0f);
   margin_property_ = new rviz::FloatProperty("Margin", 0.25,
                                              "Maximum distance between annotation bounding box and outer points to be "
                                              "considered nearby.",
                                              settings, SLOT(updateMargin()), this);
+  margin_property_->setMin(0.0f);
 
   ignore_ground_property_ = new rviz::BoolProperty("Ignore Ground", false,
                                                    "Enable to ignore the ground direction (negative z) when "
