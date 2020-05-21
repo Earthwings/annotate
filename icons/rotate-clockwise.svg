@@ -1,1 +1,65 @@
-<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M19.93 11c-.17-1.39-.72-2.73-1.62-3.89l-1.42 1.42c.54.75.88 1.6 1.02 2.47h2.02zM11 1v3.07C7.06 4.56 4 7.92 4 12s3.05 7.44 7 7.93v-2.02c-2.84-.48-5-2.94-5-5.91s2.16-5.43 5-5.91V10l4.55-4.45L11 1zm4.46 15.87c-.75.54-1.59.89-2.46 1.03v2.02c1.39-.17 2.74-.71 3.9-1.61l-1.44-1.44zm2.85.02c.9-1.16 1.45-2.5 1.62-3.89h-2.02c-.14.87-.48 1.72-1.02 2.48l1.42 1.41z"/></svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   height="16"
+   viewBox="0 0 16 16"
+   width="16"
+   version="1.1"
+   id="svg6"
+   sodipodi:docname="rotate-clockwise.svg"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)">
+  <metadata
+     id="metadata12">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs10" />
+  <sodipodi:namedview
+     inkscape:document-rotation="0"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1103"
+     id="namedview8"
+     showgrid="false"
+     inkscape:zoom="1"
+     inkscape:cx="5.9252179"
+     inkscape:cy="5.6917675"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg6">
+    <inkscape:grid
+       type="xygrid"
+       id="grid837" />
+  </sodipodi:namedview>
+  <path
+     d="M 0,0 H 24 V 24 H 0 Z"
+     fill="none"
+     id="path2" />
+  <path
+     d="M 13.890649,8.3956682 C 13.764923,7.3676702 13.358161,6.3766507 12.692551,5.5187532 L 11.642367,6.568938 c 0.399365,0.5546752 0.650819,1.183307 0.754357,1.8267302 z M 6.9952067,1 6.9990567,3.2704701 C 4.0851638,3.6328579 2.1093514,6.1178024 2.1093514,9.135235 c 0,3.017433 2.2556788,5.502377 5.1769676,5.864765 V 13.506075 C 5.1859494,13.151083 3.588485,11.331749 3.588485,9.135235 c 0,-2.1965136 1.3102023,-4.0158479 3.4105719,-4.3708399 L 7,7 10.764465,4 Z m 3.5895783,11.736925 c -0.554674,0.399366 -1.1759091,0.658215 -1.8193322,0.761754 v 1.493926 c 1.0279976,-0.125727 2.0264112,-0.525093 2.8843092,-1.190703 z m 2.107766,0.01479 c 0.66561,-0.857894 1.072372,-1.848914 1.198098,-2.8769109 h -1.493925 c -0.103538,0.6434209 -0.354992,1.2720529 -0.754357,1.8341229 z"
+     id="path4"
+     style="stroke-width:1"
+     sodipodi:nodetypes="cccccccsccscccccccccccccc" />
+</svg>

@@ -7,13 +7,13 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
-   sodipodi:docname="labels.svg"
-   id="svg6"
+   height="16"
+   viewBox="0 0 16 16"
+   width="16"
    version="1.1"
-   width="24"
-   viewBox="0 0 24 24"
-   height="24">
+   id="svg6"
+   sodipodi:docname="labels.svg"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)">
   <metadata
      id="metadata12">
     <rdf:RDF>
@@ -22,36 +22,56 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
   <defs
      id="defs10" />
   <sodipodi:namedview
-     inkscape:current-layer="svg6"
-     inkscape:window-maximized="1"
-     inkscape:window-y="27"
-     inkscape:window-x="0"
-     inkscape:cy="13.649386"
-     inkscape:cx="5.9345129"
-     inkscape:zoom="27.783404"
-     showgrid="false"
-     id="namedview8"
-     inkscape:window-height="1103"
-     inkscape:window-width="1920"
-     inkscape:pageshadow="2"
-     inkscape:pageopacity="0"
-     guidetolerance="10"
-     gridtolerance="10"
-     objecttolerance="10"
-     borderopacity="1"
+     inkscape:document-rotation="0"
+     pagecolor="#ffffff"
      bordercolor="#666666"
-     pagecolor="#ffffff" />
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1103"
+     id="namedview8"
+     showgrid="false"
+     inkscape:zoom="32"
+     inkscape:cx="11.300115"
+     inkscape:cy="11.993987"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg6">
+    <inkscape:grid
+       id="grid831"
+       type="xygrid" />
+  </sodipodi:namedview>
   <path
-     id="path2"
+     d="M 0,0 H 24 V 24 H 0 Z"
      fill="none"
-     d="M0 0h24v24H0V0z" />
+     id="path2" />
   <path
-     d="m 12,2 -5.5,9 h 11 z m 0.0032,2.5793336 3.162168,5.1774349 H 8.8246403 Z M 17.5,13 C 15.01,13 13,15.01 13,17.5 13,19.99 15.01,22 17.5,22 19.99,22 22,19.99 22,17.5 22,15.01 19.99,13 17.5,13 Z m 0,7.422901 c -1.613441,0 -2.922901,-1.30946 -2.922901,-2.922901 0,-1.613441 1.30946,-2.922901 2.922901,-2.922901 1.613441,0 2.922901,1.30946 2.922901,2.922901 0,1.613441 -1.30946,2.922901 -2.922901,2.922901 z M 3,21.5 h 8 v -8 H 3 Z m 1.5507238,-6.449276 h 4.8985524 v 4.898552 H 4.5507238 Z"
-     id="path4" />
+     sodipodi:nodetypes="cccccccccc"
+     style="stroke-width:0.999999"
+     id="path4"
+     d="M 1,15 H 7 V 9 H 1 Z m 1,-5 h 4 v 4 H 2 Z" />
+  <ellipse
+     ry="2.7500021"
+     rx="2.7500005"
+     cy="12.056746"
+     cx="11.687737"
+     id="path857"
+     style="fill:none;fill-opacity:0.995765;stroke:#000000;stroke-width:0.999999;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+  <path
+     sodipodi:nodetypes="cccc"
+     d="M 7.9935351,2.0024509 11.126922,7.500159 H 4.8602688 Z"
+     style="fill:none;fill-opacity:0.995765;stroke:#000000;stroke-width:0.999985;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     id="rect859" />
 </svg>

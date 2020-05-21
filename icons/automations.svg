@@ -1,1 +1,63 @@
-<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2zm-3-4h8v2H8z"/></svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
+   sodipodi:docname="automations.svg"
+   id="svg6"
+   version="1.1"
+   width="16"
+   viewBox="0 0 16 16"
+   height="16">
+  <metadata
+     id="metadata12">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs10" />
+  <sodipodi:namedview
+     inkscape:current-layer="svg6"
+     inkscape:window-maximized="1"
+     inkscape:window-y="27"
+     inkscape:window-x="0"
+     inkscape:cy="7.8705874"
+     inkscape:cx="6.7245966"
+     inkscape:zoom="45.254834"
+     showgrid="false"
+     id="namedview8"
+     inkscape:window-height="1103"
+     inkscape:window-width="1920"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0"
+     guidetolerance="10"
+     gridtolerance="10"
+     objecttolerance="10"
+     borderopacity="1"
+     bordercolor="#666666"
+     pagecolor="#ffffff">
+    <inkscape:grid
+       id="grid837"
+       type="xygrid" />
+  </sodipodi:namedview>
+  <path
+     id="path2"
+     fill="none"
+     d="M 0,0 H 24 V 24 H 0 Z" />
+  <path
+     style="stroke-width:0.999999"
+     id="path4"
+     d="M 11.5,4.9859028 H 8.7 v 1.4 h 2.8 c 1.155,0 2.1,0.945 2.1,2.1 0,1.155 -0.945,2.0999892 -2.1,2.0999892 H 8.7 v 1.4 h 2.8 c 1.932,0 3.5,-1.567998 3.5,-3.4999892 0,-1.932 -1.568,-3.5 -3.5,-3.5 z M 7.3,10.585892 H 4.5 c -1.155,0 -2.1,-0.9449892 -2.1,-2.0999892 0,-1.155 0.945,-2.1 2.1,-2.1 h 2.8 v -1.4 H 4.5 c -1.932,0 -3.5,1.568 -3.5,3.5 0,1.9319912 1.568,3.4999892 3.5,3.4999892 H 7.3 Z M 5.2,7.7859028 h 5.6 v 1.4 H 5.2 Z" />
+</svg>

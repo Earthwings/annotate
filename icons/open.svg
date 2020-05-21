@@ -1,14 +1,68 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-  <defs id="defs3051">
-    <style type="text/css" id="current-color-scheme">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
+   height="16"
+   width="16"
+   sodipodi:docname="open.svg"
+   id="svg6"
+   version="1.1"
+   viewBox="0 0 16 16">
+  <metadata
+     id="metadata10">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     inkscape:current-layer="svg6"
+     inkscape:window-maximized="1"
+     inkscape:window-y="27"
+     inkscape:window-x="0"
+     inkscape:cy="10.07722"
+     inkscape:cx="7.1038757"
+     inkscape:zoom="32"
+     showgrid="false"
+     id="namedview8"
+     inkscape:window-height="1103"
+     inkscape:window-width="1920"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0"
+     guidetolerance="10"
+     gridtolerance="10"
+     objecttolerance="10"
+     borderopacity="1"
+     bordercolor="#666666"
+     pagecolor="#ffffff">
+    <inkscape:grid
+       id="grid835"
+       type="xygrid" />
+  </sodipodi:namedview>
+  <defs
+     id="defs3051">
+    <style
+       id="current-color-scheme"
+       type="text/css">
       .ColorScheme-Text {
         color:#232629;
       }
       </style>
   </defs>
- <path 
-    style="fill:currentColor;fill-opacity:1;stroke:none" 
-	d="m3 3v1 15h1 15v-1-13h-6.992188l-2-2-.007812.007813v-.007813h-6-1m6.00781 5h8.992188v10h-14v-8h3v-.007813l.007813.007813 2-2"
-    class="ColorScheme-Text"
-    />
+  <path
+     id="path4"
+     class="ColorScheme-Text"
+     d="M 2,2 V 2.75 14 H 2.75 14 V 13.25 3.5 H 8.755859 L 7.255859,2 7.25,2.0058598 V 2 H 2.75 2 m 4.5058575,3.75 h 6.7441405 v 7.5 H 2.7499985 v -6 h 2.25 V 7.24414 l 0.00586,0.00586 1.5,-1.5"
+     style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.999997" />
 </svg>

@@ -1,18 +1,72 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
+   height="16"
+   width="16"
+   sodipodi:docname="save.svg"
+   id="svg5"
+   version="1.1"
+   viewBox="0 0 16 16">
+  <metadata
+     id="metadata9">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     inkscape:snap-global="false"
+     inkscape:current-layer="svg5"
+     inkscape:window-maximized="1"
+     inkscape:window-y="27"
+     inkscape:window-x="0"
+     inkscape:cy="7.8710063"
+     inkscape:cx="6.9784165"
+     inkscape:zoom="45.254834"
+     showgrid="true"
+     id="namedview7"
+     inkscape:window-height="1103"
+     inkscape:window-width="1920"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0"
+     guidetolerance="10"
+     gridtolerance="10"
+     objecttolerance="10"
+     borderopacity="1"
+     bordercolor="#666666"
+     pagecolor="#ffffff">
+    <inkscape:grid
+       id="grid834"
+       type="xygrid" />
+  </sodipodi:namedview>
   <defs
      id="defs3051">
     <style
-       type="text/css"
-       id="current-color-scheme">
+       id="current-color-scheme"
+       type="text/css">
       .ColorScheme-Text {
         color:#232629;
       }
       </style>
   </defs>
   <path
-     style="fill:currentColor;fill-opacity:1;stroke:none" 
-     d="M 4 4 L 4 28 L 9 28 L 23 28 L 28 28 L 28 10 L 27 9 L 23 5 L 22 4 L 21 4 L 10 4 L 4 4 z M 5 5 L 10 5 L 10 13 L 21 13 L 21 5 L 21.585938 5 L 27 10.414062 L 27 27 L 23 27 L 23 19 L 9 19 L 9 27 L 5 27 L 5 5 z M 11 5 L 17 5 L 17 12 L 11 12 L 11 5 z M 10 20 L 22 20 L 22 27 L 10 27 L 10 20 z "
-     id="path60" 
-     class="ColorScheme-Text"
-     />
+     transform="matrix(0.9817831,0,0,0.9817831,0.14573525,0.14573525)"
+     d="M 2,1.8886719 A 0.11076691,0.11076691 0 0 0 1.8886719,2 V 14 A 0.11076691,0.11076691 0 0 0 2,14.111328 h 2.5 7 2.5 A 0.11076691,0.11076691 0 0 0 14.111328,14 V 5 a 0.11076691,0.11076691 0 0 0 -0.0332,-0.078125 l -0.5,-0.5 -2,-2 -0.5,-0.5 A 0.11076691,0.11076691 0 0 0 11,1.8886719 H 10.5 5 Z M 2.6113281,2.6113281 H 4.8886719 V 6.5 A 0.11076691,0.11076691 0 0 0 5,6.6113281 h 5.5 A 0.11076691,0.11076691 0 0 0 10.611328,6.5 V 2.6113281 h 0.136719 l 2.640625,2.640625 V 13.388672 H 11.611328 V 9.5 A 0.11076691,0.11076691 0 0 0 11.5,9.3886719 h -7 A 0.11076691,0.11076691 0 0 0 4.3886719,9.5 v 3.888672 H 2.6113281 Z m 3,0 H 8.3886719 V 5.8886719 H 5.6113281 Z m -0.5,7.4999999 h 5.7773439 v 3.277344 H 5.1113281 Z"
+     inkscape:original="M 2 1.8886719 A 0.11076691 0.11076691 0 0 0 1.8886719 2 L 1.8886719 14 A 0.11076691 0.11076691 0 0 0 2 14.111328 L 4.5 14.111328 L 11.5 14.111328 L 14 14.111328 A 0.11076691 0.11076691 0 0 0 14.111328 14 L 14.111328 5 A 0.11076691 0.11076691 0 0 0 14.078125 4.921875 L 13.578125 4.421875 L 11.578125 2.421875 L 11.078125 1.921875 A 0.11076691 0.11076691 0 0 0 11 1.8886719 L 10.5 1.8886719 L 5 1.8886719 L 2 1.8886719 z M 2.6113281 2.6113281 L 4.8886719 2.6113281 L 4.8886719 6.5 A 0.11076691 0.11076691 0 0 0 5 6.6113281 L 10.5 6.6113281 A 0.11076691 0.11076691 0 0 0 10.611328 6.5 L 10.611328 2.6113281 L 10.748047 2.6113281 L 13.388672 5.2519531 L 13.388672 13.388672 L 11.611328 13.388672 L 11.611328 9.5 A 0.11076691 0.11076691 0 0 0 11.5 9.3886719 L 4.5 9.3886719 A 0.11076691 0.11076691 0 0 0 4.3886719 9.5 L 4.3886719 13.388672 L 2.6113281 13.388672 L 2.6113281 2.6113281 z M 5.6113281 2.6113281 L 8.3886719 2.6113281 L 8.3886719 5.8886719 L 5.6113281 5.8886719 L 5.6113281 2.6113281 z M 5.1113281 10.111328 L 10.888672 10.111328 L 10.888672 13.388672 L 5.1113281 13.388672 L 5.1113281 10.111328 z "
+     inkscape:radius="1.4038949e-06"
+     sodipodi:type="inkscape:offset"
+     style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.01855"
+     id="path60" />
 </svg>

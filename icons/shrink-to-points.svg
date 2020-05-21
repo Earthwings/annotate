@@ -7,13 +7,13 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   height="16"
-   viewBox="0 0 16 16"
-   width="16"
-   version="1.1"
-   id="svg6"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
    sodipodi:docname="shrink-to-points.svg"
-   inkscape:version="1.0 (4035a4fb49, 2020-05-01)">
+   id="svg6"
+   version="1.1"
+   width="16"
+   viewBox="0 0 16 16"
+   height="16">
   <metadata
      id="metadata12">
     <rdf:RDF>
@@ -22,61 +22,61 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
   <defs
      id="defs10" />
   <sodipodi:namedview
-     inkscape:document-rotation="0"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1"
-     objecttolerance="10"
-     gridtolerance="10"
-     guidetolerance="10"
-     inkscape:pageopacity="0"
-     inkscape:pageshadow="2"
-     inkscape:window-width="1920"
-     inkscape:window-height="1103"
-     id="namedview8"
-     showgrid="true"
-     inkscape:showpageshadow="false"
-     showborder="true"
-     inkscape:zoom="45.254834"
-     inkscape:cx="9.4407984"
-     inkscape:cy="8.2782668"
-     inkscape:window-x="0"
-     inkscape:window-y="27"
+     inkscape:current-layer="svg6"
      inkscape:window-maximized="1"
-     inkscape:current-layer="svg6">
+     inkscape:window-y="27"
+     inkscape:window-x="0"
+     inkscape:cy="8.4016363"
+     inkscape:cx="6.0252659"
+     inkscape:zoom="16"
+     showborder="true"
+     inkscape:showpageshadow="false"
+     showgrid="true"
+     id="namedview8"
+     inkscape:window-height="1103"
+     inkscape:window-width="1920"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0"
+     guidetolerance="10"
+     gridtolerance="10"
+     objecttolerance="10"
+     borderopacity="1"
+     bordercolor="#666666"
+     pagecolor="#ffffff"
+     inkscape:document-rotation="0">
     <inkscape:grid
-       type="xygrid"
-       id="grid837" />
+       id="grid837"
+       type="xygrid" />
   </sodipodi:namedview>
   <path
-     d="M 0,0 H 24 V 24 H 0 Z"
+     id="path2"
      fill="none"
-     id="path2" />
+     d="M 0,0 H 24 V 24 H 0 Z" />
+  <path
+     id="path4"
+     d="M 15,9 V 7 H 12 V 5 l -3,3 3,3 V 9 Z"
+     style="stroke-width:0.999997"
+     sodipodi:nodetypes="cccccccc" />
   <path
      sodipodi:nodetypes="cccccccc"
      style="stroke-width:0.999997"
-     d="M 16,9 V 7 H 13 V 5 l -3,3 3,3 V 9 Z"
-     id="path4" />
+     d="m 1,7 v 2 h 3 v 2 L 7,8 4,5 v 2 z"
+     id="path835" />
   <path
-     id="path835"
-     d="m 0,7 v 2 h 3 v 2 L 6,8 3,5 v 2 z"
+     sodipodi:nodetypes="cccccccc"
      style="stroke-width:0.999997"
-     sodipodi:nodetypes="cccccccc" />
+     d="m 7,15 h 2 v -3 h 2 L 8,9 5,12 h 2 z"
+     id="path837" />
   <path
-     id="path837"
-     d="m 7,16 h 2 v -3 h 2 L 8,10 5,13 h 2 z"
+     sodipodi:nodetypes="cccccccc"
      style="stroke-width:0.999997"
-     sodipodi:nodetypes="cccccccc" />
-  <path
-     id="path839"
-     d="M 9,0 H 7 V 3 H 5 L 8,6 11,3 H 9 Z"
-     style="stroke-width:0.999997"
-     sodipodi:nodetypes="cccccccc" />
+     d="M 9,1 H 7 V 4 H 5 L 8,7 11,4 H 9 Z"
+     id="path839" />
 </svg>
