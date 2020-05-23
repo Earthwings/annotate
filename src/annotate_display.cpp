@@ -358,7 +358,7 @@ void AnnotateDisplay::onInitialize()
                                                 automations);
   shrink_before_commit_ = new rviz::BoolProperty(
       "Shrink before commit", true, "Shrink annotation box to fit points when committing an annotation.", automations);
-  auto_fit_after_predict_ = new rviz::BoolProperty(
+  auto_fit_after_points_change_ = new rviz::BoolProperty(
       "Auto-fit after points change", false, "Auto-fit annotation boxes when the point cloud changes.", automations);
   pause_after_data_change_ = new rviz::BoolProperty("Pause playback after points change", false,
                                                     "Pause playback when the point cloud changes.", automations);
@@ -840,9 +840,9 @@ bool AnnotateDisplay::shrinkBeforeCommit() const
   return shrink_before_commit_ && shrink_before_commit_->getBool();
 }
 
-bool AnnotateDisplay::autoFitAfterPredict() const
+bool AnnotateDisplay::autoFitAfterPointsChange() const
 {
-  return auto_fit_after_predict_ && auto_fit_after_predict_->getBool();
+  return auto_fit_after_points_change_ && auto_fit_after_points_change_->getBool();
 }
 
 }  // namespace annotate

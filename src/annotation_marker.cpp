@@ -516,6 +516,9 @@ void AnnotationMarker::shrink(const visualization_msgs::InteractiveMarkerFeedbac
 
 bool AnnotationMarker::fitNearbyPoints()
 {
+  auto const pose = marker_.pose;
+  auto const box_size = boxSize();
+
   {
     auto const context = analyzePoints();
     if (context.points_nearby == 0)
@@ -536,6 +539,12 @@ bool AnnotationMarker::fitNearbyPoints()
     }
   }
 
+  if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
+  {
+    auto& box = marker_.controls.front().markers.front();
+    vector3TFToMsg(box_size, box.scale);
+    marker_.pose = pose;
+  }
   return false;
 }
 
@@ -555,15 +564,10 @@ void AnnotationMarker::shrinkToPoints()
 void AnnotationMarker::autoFit()
 {
   pull();
-  saveForUndo("auto-fit box");
   if (fitNearbyPoints())
   {
     updateState(Modified);
     push();
-  }
-  else if (!undo_stack_.empty() && undo_stack_.top().undo_description == "auto-fit box")
-  {
-    undo();
   }
 }
 
@@ -921,13 +925,17 @@ void AnnotationMarker::setTime(const ros::Time& time)
   {
     auto const transform = estimatePose(track[0].center, track[1].center, time);
     poseTFToMsg(transform, marker_.pose);
-    if (annotate_display_->autoFitAfterPredict())
-    {
-      fitNearbyPoints();
-    }
   }
 
   updateState(New);
+  if (annotate_display_->autoFitAfterPointsChange())
+  {
+    if (fitNearbyPoints())
+    {
+      updateState(Modified);
+    }
+  }
+
   push();
 }
 

@@ -45,7 +45,7 @@ public:
 
   bool shrinkAfterResize() const;
   bool shrinkBeforeCommit() const;
-  bool autoFitAfterPredict() const;
+  bool autoFitAfterPointsChange() const;
 
 private Q_SLOTS:
   void updateTopic();
@@ -110,7 +110,7 @@ private:
   ros::ServiceClient playback_client_;
   rviz::BoolProperty* shrink_after_resize_{ nullptr };
   rviz::BoolProperty* shrink_before_commit_{ nullptr };
-  rviz::BoolProperty* auto_fit_after_predict_{ nullptr };
+  rviz::BoolProperty* auto_fit_after_points_change_{ nullptr };
   rviz::BoolProperty* play_after_commit_{ nullptr };
   rviz::BoolProperty* pause_after_data_change_{ nullptr };
   rviz::FloatProperty* padding_property_{ nullptr };
