@@ -7,6 +7,7 @@
 #include <pcl_ros/transforms.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <QColor>
+#include <QThread>
 #include <random>
 #include <sstream>
 
@@ -678,11 +679,18 @@ AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
 
   auto& transform_listener = annotate_display_->transformListener();
   transform_listener.setTransform(stamped_transform);
+  auto time = ros::Time();
   string error;
-  bool const can_transform =
-      transform_listener.canTransform("current_annotation", cloud->header.frame_id, context.time, &error);
-  auto const time = can_transform ? context.time : ros::Time();
-  if (can_transform || transform_listener.canTransform("current_annotation", cloud->header.frame_id, time, &error))
+  for (int i = 0; i < 25; ++i)
+  {
+    if (transform_listener.canTransform("current_annotation", cloud->header.frame_id, context.time, &error))
+    {
+      time = context.time;
+      break;
+    }
+    QThread::msleep(10);
+  }
+  if (transform_listener.canTransform("current_annotation", cloud->header.frame_id, time, &error))
   {
     StampedTransform trafo;
     transform_listener.lookupTransform("current_annotation", cloud->header.frame_id, time, trafo);
