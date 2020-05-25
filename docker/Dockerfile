@@ -1,7 +1,7 @@
 ARG ROS_DISTRO=melodic
 FROM ros:${ROS_DISTRO}-ros-base
 
-COPY NVIDIA-DRIVER.run /tmp/NVIDIA-DRIVER.run
+#COPY NVIDIA-DRIVER.run /tmp/NVIDIA-DRIVER.run
 
 ARG USERNAME=user
 ARG USER_UID=1000
@@ -37,11 +37,11 @@ RUN apt-get update \
     # Clean up
     && apt-get autoremove -y \
     && apt-get clean -y \
-    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/lib/apt/lists/*
     #
     # Install nvidia driver
-    && sh /tmp/NVIDIA-DRIVER.run -a -N --ui=none --no-kernel-module && rm /tmp/NVIDIA-DRIVER.run \
-    && ln -s /usr/lib/libGL.so.1 /usr/lib/x86_64-linux-gnu/libGL.so
+    #&& sh /tmp/NVIDIA-DRIVER.run -a -N --ui=none --no-kernel-module && rm /tmp/NVIDIA-DRIVER.run \
+    #&& ln -s /usr/lib/libGL.so.1 /usr/lib/x86_64-linux-gnu/libGL.so
 
 # Switch back to dialog for any ad-hoc use of apt-get
 ENV DEBIAN_FRONTEND=dialog
