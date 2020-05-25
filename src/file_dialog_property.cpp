@@ -1,8 +1,10 @@
-#include <rviz/properties/property.h>
 #include <annotate/file_dialog_property.h>
+#include <rviz/properties/property.h>
 #include <QFileDialog>
 #include <QPushButton>
 
+namespace annotate
+{
 FileDialogProperty::FileDialogProperty(const QString& name, const QString& default_value, const QString& description,
                                        rviz::Property* parent, const char* changed_slot, QObject* receiver)
   : rviz::Property(name, default_value, description, parent, changed_slot, receiver)
@@ -51,3 +53,5 @@ void FileDialogEditor::onButtonClick()
     property->setValue(file);
   }
 }
+
+}  // namespace annotate

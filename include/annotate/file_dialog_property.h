@@ -3,6 +3,8 @@
 #include <rviz/properties/property.h>
 #include "rviz/properties/line_edit_with_button.h"
 
+namespace annotate
+{
 class FileDialogProperty : public rviz::Property
 {
   Q_OBJECT
@@ -36,3 +38,5 @@ private:
   FileDialogProperty* property_;
   FileDialogProperty::Mode const mode_;
 };
+
+}  // namespace annotate

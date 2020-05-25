@@ -46,6 +46,7 @@ public:
   bool shrinkAfterResize() const;
   bool shrinkBeforeCommit() const;
   bool autoFitAfterPointsChange() const;
+  QStringList toolShortcuts() const;
 
 private Q_SLOTS:
   void updateTopic();

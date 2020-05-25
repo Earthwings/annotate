@@ -8,6 +8,7 @@
 #include <rviz/default_plugin/marker_array_display.h>
 #include <rviz/default_plugin/point_cloud2_display.h>
 #include <rviz/render_panel.h>
+#include <rviz/tool_manager.h>
 #include <rviz/view_manager.h>
 #include <std_srvs/SetBool.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -399,6 +400,21 @@ void AnnotateDisplay::onInitialize()
 
   adjustView();
   expand();
+}
+
+QStringList AnnotateDisplay::toolShortcuts() const
+{
+  QStringList shortcuts;
+  auto* tool_manager = context_->getToolManager();
+  if (tool_manager)
+  {
+    for (int i = 0; i < tool_manager->numTools(); ++i)
+    {
+      auto* tool = tool_manager->getTool(i);
+      shortcuts << QString(tool->getShortcutKey());
+    }
+  }
+  return shortcuts;
 }
 
 void AnnotateDisplay::load(const rviz::Config& config)

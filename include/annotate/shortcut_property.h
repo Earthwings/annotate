@@ -2,7 +2,10 @@
 
 #include <rviz/properties/string_property.h>
 #include <QShortcut>
-#include <rviz/display.h>
+
+namespace annotate
+{
+class AnnotateDisplay;
 
 class ShortcutProperty : public rviz::StringProperty
 {
@@ -17,7 +20,7 @@ public:
    * which should be a shortcut string that Qt understands (cf QKeySequence). If a shortcut is invalid or used
    * already, a warning status is set in display.
    */
-  void createShortcut(rviz::Display* display, QWidget* target, QObject* receiver, const char* trigger_slot);
+  void createShortcut(AnnotateDisplay* display, QWidget* target, QObject* receiver, const char* trigger_slot);
   void setEnabled(bool enabled);
 
 private Q_SLOTS:
@@ -27,5 +30,7 @@ private Q_SLOTS:
 private:
   QString statusName() const;
   QShortcut* shortcut_{ nullptr };
-  rviz::Display* display_{ nullptr };
+  AnnotateDisplay* display_{ nullptr };
 };
+
+}  // namespace annotate

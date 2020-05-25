@@ -1,9 +1,12 @@
-#include <rviz/properties/property.h>
-#include <rviz/load_resource.h>
+#include <annotate/annotate_display.h>
 #include <annotate/shortcut_property.h>
+#include <rviz/load_resource.h>
+#include <rviz/properties/property.h>
 #include <QFileDialog>
 #include <QPushButton>
 
+namespace annotate
+{
 ShortcutProperty::ShortcutProperty(const QString& name, const QString& default_value, const QString& description,
                                    rviz::Property* parent, const char* changed_slot, QObject* receiver)
   : rviz::StringProperty(name, default_value, description, parent, changed_slot, receiver)
@@ -13,7 +16,7 @@ ShortcutProperty::ShortcutProperty(const QString& name, const QString& default_v
   connect(this, SIGNAL(changed()), this, SLOT(updateShortcut()));
 }
 
-void ShortcutProperty::createShortcut(rviz::Display* display, QWidget* target, QObject* receiver,
+void ShortcutProperty::createShortcut(AnnotateDisplay* display, QWidget* target, QObject* receiver,
                                       const char* trigger_slot)
 {
   display_ = display;
@@ -56,7 +59,15 @@ void ShortcutProperty::updateShortcut()
       shortcut_->setKey(key_sequence);
       if (display_)
       {
-        display_->deleteStatus(statusName());
+        if (display_->toolShortcuts().contains(getString()))
+        {
+          display_->setStatus(rviz::StatusProperty::Warn, statusName(),
+                              QString("The keyboard shortcut '%1' hides a Tool shortcut.").arg(getString()));
+        }
+        else
+        {
+          display_->deleteStatus(statusName());
+        }
       }
     }
   }
@@ -71,3 +82,5 @@ void ShortcutProperty::handleAmbiguousShortcut()
         QString("The keyboard shortcut '%1' is already used. Please choose a different one.").arg(getString()));
   }
 }
+
+}  // namespace annotate
