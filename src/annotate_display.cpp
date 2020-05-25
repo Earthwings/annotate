@@ -687,13 +687,19 @@ bool AnnotateDisplay::save()
   using namespace YAML;
   Node node;
   size_t annotations = 0;
-  for (auto const& label : labels_)
+  if (!labels_.empty())
   {
-    node["labels"].push_back(label);
+    for (auto const& label : labels_)
+    {
+      node["labels"].push_back(label);
+    }
   }
-  for (auto const& tag : tags_)
+  if (!tags_.empty())
   {
-    node["tags"].push_back(tag);
+    for (auto const& tag : tags_)
+    {
+      node["tags"].push_back(tag);
+    }
   }
   for (auto const& marker : markers_)
   {
@@ -704,12 +710,15 @@ bool AnnotateDisplay::save()
       Node i;
       i["label"] = instance.label;
 
-      Node tags;
-      for (auto const& tag : instance.tags)
+      if (!instance.tags.empty())
       {
-        tags.push_back(tag);
+        Node tags;
+        for (auto const& tag : instance.tags)
+        {
+          tags.push_back(tag);
+        }
+        i["tags"] = tags;
       }
-      i["tags"] = tags;
 
       Node header;
       header["frame_id"] = instance.center.frame_id_;
