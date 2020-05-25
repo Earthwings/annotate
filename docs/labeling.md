@@ -1,5 +1,7 @@
 # Labeling with annotate
+
 This guide teaches basic annotation concepts used in annotate. Read on to learn how to
+
 * setup your ROS environment to start annotating
 * create the first annotation for a physical object
 * create subsequent annotations for the same object
@@ -8,11 +10,13 @@ This guide teaches basic annotation concepts used in annotate. Read on to learn 
 The guide uses a real-world example. Setup your local ROS environment as described in the guide to follow in parallel using a hands-on approach.
 
 ## Preparation
+
 The example described in the rest of this document uses a real-world labeling example taken from the [KITTI Vision Benchmark Suite](http://www.cvlibs.net/datasets/kitti/). The example bag file is a 16 seconds long traffic sequence called 2011_09_26_drive_0005.bag created using [kitti_to_rosbag](https://github.com/ethz-asl/kitti_to_rosbag). It provides lidar data from a Velodyne HDL-64 in the velodyne_points topic.
 
 Do you have a different ROS bag file with point cloud data at hand that should be annotated? You can also follow the guide using that bag file. Some sections need slight adjustments; the guide will point out these differences.
 
 The annotation environment in ROS consists of two parts:
+
 * Point cloud data on a ROS topic in `sensor_msgs/PointCloud2` format. Usually it comes from `rosbag play` &mdash; either directly or after some conversion or filtering.
 * RViz running with the annotate plugins installed.
 
@@ -26,6 +30,7 @@ roslaunch annotate demo.launch \
 ```
 
 For a custom bag file, please adjust the path to the bag file and the point cloud topic to pause on. In case you are not using `demo.launch`, but start RViz manually, you have to configure RViz for annotations:
+
 * In the `Tools` panel, use the `+` icon to add the <img src="../icons/classes/New%20Annotation.svg" height="20" style="vertical-align: middle;" />`New Annotation` tool.
 * In the `Displays` panel, use the `Add` button to add an <img src="../icons/classes/New%20Annotation.svg" height="20" style="vertical-align: middle;" />`Annotated PointCloud2` display for the point cloud topic you want to annotate.
 
@@ -34,7 +39,9 @@ Starting `demo.launch` from annotate will open an RViz window for data annotatio
 You are ready to create the first annotation now. The next section explains that in detail. It uses the cyclist in the beginning of the scene as its annotation object. Do you want to follow up in parallel? Then please spot the cyclist in the scene and focus the RViz view on it before reading on.
 
 ## Creating a new annotation
+
 After you have spotted a new object for annotation, create a new annotation for it in two steps:
+
 * Click on the **New Annotation** button in the RViz tools panel.
 * Click on the object in the pointcloud.
 
@@ -45,6 +52,7 @@ Annotate will create a new annotation at the point you clicked in the scene. It 
 ### Assigning a label
 
 Assign a label for the new annotation using the context menu.
+
 * Right-click on the annotation cube (bounding box).
 * Select a label in the **Label** menu of the context menu.
 * Note how the annotation description above the annotation cube now includes the chosen label.
@@ -98,6 +106,7 @@ You can conclude that an annotation box is a well-aligned box if the following h
 ### Committing
 
 ### Summary
+
 In order to create a new annotation for an object that has not been annotated yet in the scene, follow these steps:
 
 1. Spot the object in RViz and focus the view on it.
@@ -118,11 +127,14 @@ In order to create a new annotation for an object that has not been annotated ye
 Most objects change their position and shape in the scene only gradually. Accordingly subsequent annotations are similar in shape and position. Annotate uses this fact to facilitate creating so-called annotation tracks, the change of an object's position and shape over time. Continue reading the next section to learn about annotation tracks in detail.
 
 ## Creating annotation tracks
+
 In the previous section you created a new annotation for the cyclist. The new annotation automatically created an *annotation track* with a unique identifier (`#15`). The first commit created the first *annotation instance* for that annotation track. An annotation instance holds all annotation properties for a given point in time: The bounding box (position and shape), the assigned label and the assigned tags. Only the identifier is not stored with an annotation instance, but with its track.
 
 You are now ready to create the second *annotation instance* for the cyclist. To do that, first move forward a bit in time to the next point cloud data. Press <kbd>space</kbd> to accomplish this. The point cloud changes slightly and the cyclist moves forward a bit. Note how the previously created annotation for the cyclist stays around at its earlier position, but changes color from green (committed) to gray.
 
-Create the second annotation instance for the cyclist by following steps 5. (change to birds-eye view) to 14. in the previous section. The commit in step 14 turns the bounding box green again, but another change occurs: A line is shown connecting the earlier bounding box center to the new center. This is a visual aid to see the object's movement over time.
+Create the second annotation instance for the cyclist by following steps 5. (change to birds-eye view) to 14. in the previous section. The commit in step 14 turns the bounding box green again, but another change occurs: A line is shown connecting the earlier bounding box center to the new center. This is a visual aid to see the object's movement over time. Over time it will become a path like in the following screenshot:
+
+![Annotation Track ](track.png "Annotation Track")
 
 Move on to create the third annotation instance: Press <kbd>space</kbd> again. Note that this time the old annotation instance does not stay at its previous position, but moves with the object. Annotate calculates the new position based on the previous two annotation instances. The estimated position is accurate as long as the object keeps its speed and direction. This helps to reduce the effort needed to align the bounding box perfectly. Often a call of the auto-fit action is all that is needed.
 
@@ -135,11 +147,11 @@ To summarize, the following process creates an entire annotation track for a new
 1. Create a new annotation as described in the previous section.
 2. Press <kbd>space</kbd> to move forward in time.
 3. If the object is not visible anymore, you are done.
-3. Otherwise, align the bounding box perfectly.
-4. Adjust the label, if needed.
-5. Adjust tags, if needed.
-6. Commit the annotation instance.
-7. Go to step 2.
+4. Otherwise, align the bounding box perfectly.
+5. Adjust the label, if needed.
+6. Adjust tags, if needed.
+7. Commit the annotation instance.
+8. Go to step 2.
 
 The cyclist is not the only object in the scene that should be annotated. The annotation process for the other objects follows the same principle, however. When annotating multiple objects, there are two basic strategies:
 
@@ -149,7 +161,57 @@ The cyclist is not the only object in the scene that should be annotated. The an
 Which strategy you want to follow is up to you. If you are unsure, go for the first one (annotating one object after the other). Focussing on one object at a time is usually faster and leads to more accurate annotations.
 
 ## Using Keyboard Shortcuts
-tbd.
+
+Creating annotations becomes quick once you are familiar with the different edit modes and the available actions. But toggling between edit modes and selecting actions from the context will limit your speed. Use keyboard shortcuts to quickly activate actions.
+
+The following table shows the available actions and their default keyboard shortcuts.
+
+| Action                                                                                                             | Default Shortcut                  | Description                                                  |
+|--------------------------------------------------------------------------------------------------------------------|-----------------------------------|--------------------------------------------------------------|
+| <img src="../icons/undo.svg" height="20" style="vertical-align: middle;" /> undo                                   | <kbd>Ctrl</kbd>+<kbd>Z</kbd>      | Revert the last action                                       |
+| <img src="../icons/toggle-pause.svg" height="20" style="vertical-align: middle;" /> toggle pause                   | <kbd>space</kbd>                  | Toggle play and pause state in `rosbag play`                 |
+| <img src="../icons/rotate-clockwise.svg" height="20" style="vertical-align: middle;" /> rotate clockwise           | <kbd>&#x25B6;</kbd> (right arrow) | Rotate the bounding box clockwise (from birds-eye view)      |
+| <img src="../icons/rotate-anti-clockwise.svg" height="20" style="vertical-align: middle;" /> rotate anti-clockwise | <kbd>&#x25C0;</kbd> (left arrow)  | Rotate the bounding box anti-clockwise (from birds-eye view) |
+| <img src="../icons/shrink-to-points.svg" height="20" style="vertical-align: middle;" /> shrink to points           | <kbd>Ctrl</kbd>+<kbd>B</kbd>      | Shrink bounding box to points inside                         |
+| <img src="../icons/auto-fit-points.svg" height="20" style="vertical-align: middle;" /> auto-fit points             | <kbd>Ctrl</kbd>+<kbd>F</kbd>      | Fit bounding box to nearby points                            |
+| <img src="../icons/commit-annotation.svg" height="20" style="vertical-align: middle;" /> commit annotation         | <kbd>Ctrl</kbd>+<kbd>C</kbd>      | Save current annotation                                      |
+
+The actions *toggle pause*, *rotate clockwise*, and *rotate anti-clockwise* have no counterpart in the context menu of annotations. Rotations can alternatively be performed in the box mode *Rotate*. Toggling playback and pause state is only available via a keyboard shortcut.
+
+Change the keyboard shortcuts to your liking in the Annotated PointCloud2 display. You can specify any key sequence understood by [Qt's QKeySequence](https://doc.qt.io/qt-5/qkeysequence.html). Combine modifiers like <kbd>Ctrl</kbd>, <kbd>Shift</kbd>, <kbd>Alt</kbd> with character keys like <kbd>A</kbd>, <kbd>B</kbd>, <kbd>C</kbd>, but also other keys including
+
+* <kbd>&#x25B2;</kbd> up
+* <kbd>&#x25B6;</kbd> right
+* <kbd>&#x25C0;</kbd> left
+* <kbd>&#x25BC;</kbd> down
+* <kbd>&#x23CE;</kbd> return
+* <kbd>&#x27F5;</kbd> backspace.
+
+Annotate will warn you in case you're entering an invalid shortcut. It also warns you against specifying shortcuts already used somewhere else like the following video demonstrates:
+
+![Editing Shortcuts](shortcut-editing.gif)
 
 ## Linking Actions
-tbd.
+
+Once you memorize keyboard shortcuts you will become very fast to create annotation tracks for most objects. A typical track annotation sequence repeats the following default keyboard shortcuts with only little manual intervention in between:
+
+1. <kbd>Ctrl</kbd>+<kbd>F</kbd> to fit the bounding box to nearby points
+2. <kbd>Ctrl</kbd>+<kbd>C</kbd> to commit the annotation
+3. <kbd>space</kbd> to move to the next point in time
+
+Shorten sequences with linked actions. The one above, for example, can be shortened to a single press of <kbd>Ctrl</kbd>+<kbd>C</kbd> by activating
+
+* Auto-fit points after change
+* Resume playback after commit
+
+in the *Linked Actions* section in the Annotated Pointcloud2 display.
+
+The following table lists all actions that can be linked and their description:
+
+| Linked Action                      | Description |
+|------------------------------------|-------------|
+| Shrink after resize                | After resizing the annotation bounding box using the resize handles in resize mode, shrink the annotation bounding box to the points now inside. |
+| Shrink before commit               | When the commit action is executed via the context menu or a keyboard shortcut, shrink the bounding box to the points inside before committing. |
+| Auto-fit after points change       | When new point data arrives (time changes, objects move) fit the bounding box to nearby points. |
+| Pause playback after points change | When new point data arrives (time changes, objects move), pause playback. This can be used as an alternative to the `--pause-topics` parameter of `rosbag play`. |
+| Resume playback after commit       | After the commit action is executed via the context menu or a keyboard shortcut, set `rosbag play` to play mode to resume playback. |
