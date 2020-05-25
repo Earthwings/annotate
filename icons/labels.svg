@@ -13,7 +13,7 @@
    version="1.1"
    id="svg6"
    sodipodi:docname="labels.svg"
-   inkscape:version="1.0 (4035a4fb49, 2020-05-01)">
+   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)">
   <metadata
      id="metadata12">
     <rdf:RDF>
@@ -22,7 +22,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -38,14 +38,14 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1920"
-     inkscape:window-height="1103"
+     inkscape:window-width="1864"
+     inkscape:window-height="1136"
      id="namedview8"
-     showgrid="false"
+     showgrid="true"
      inkscape:zoom="32"
-     inkscape:cx="11.300115"
-     inkscape:cy="11.993987"
-     inkscape:window-x="0"
+     inkscape:cx="10.161671"
+     inkscape:cy="7.1604745"
+     inkscape:window-x="56"
      inkscape:window-y="27"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg6">
@@ -59,16 +59,18 @@
      id="path2" />
   <path
      sodipodi:nodetypes="cccccccccc"
-     style="stroke-width:0.999999"
+     style="stroke-width:0.99999899"
      id="path4"
-     d="M 1,15 H 7 V 9 H 1 Z m 1,-5 h 4 v 4 H 2 Z" />
-  <ellipse
-     ry="2.7500021"
-     rx="2.7500005"
-     cy="12.056746"
-     cx="11.687737"
+     d="m 2.0164666,15 h 6 V 9 h -6 z m 1,-5 h 4 v 4 h -4 z"
+     inkscape:connector-curvature="0" />
+  <path
+     sodipodi:type="inkscape:offset"
+     inkscape:radius="0"
+     inkscape:original="M 11.742188 9.3515625 A 2.6505635 2.6505651 0 0 0 9.0917969 12.001953 A 2.6505635 2.6505651 0 0 0 11.742188 14.652344 A 2.6505635 2.6505651 0 0 0 14.392578 12.001953 A 2.6505635 2.6505651 0 0 0 11.742188 9.3515625 z "
+     style="fill:none;fill-opacity:0.995765;stroke:#000000;stroke-width:1.18997133;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
      id="path857"
-     style="fill:none;fill-opacity:0.995765;stroke:#000000;stroke-width:0.999999;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+     d="m 11.742188,9.3515625 a 2.6505635,2.6505651 0 0 0 -2.6503911,2.6503905 2.6505635,2.6505651 0 0 0 2.6503911,2.650391 2.6505635,2.6505651 0 0 0 2.65039,-2.650391 2.6505635,2.6505651 0 0 0 -2.65039,-2.6503905 z"
+     transform="matrix(0.92439207,0,0,0.92439208,1.1456145,0.90895967)" />
   <path
      sodipodi:nodetypes="cccc"
      d="M 7.9935351,2.0024509 11.126922,7.500159 H 4.8602688 Z"
