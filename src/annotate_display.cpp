@@ -394,7 +394,7 @@ void AnnotateDisplay::onInitialize()
       new ShortcutProperty("auto fit points", "Ctrl+F", "Auto-fit annotation to nearby points", shortcuts_property_);
   auto_fit->createShortcut(this, render_panel, this, SLOT(autoFitPoints()));
   auto* commit =
-      new ShortcutProperty("commit annotation", "return", "Commit current annotation and save", shortcuts_property_);
+      new ShortcutProperty("commit annotation", "Ctrl+C", "Commit current annotation and save", shortcuts_property_);
   commit->createShortcut(this, render_panel, this, SLOT(commit()));
 
   adjustView();
