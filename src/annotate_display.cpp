@@ -199,7 +199,7 @@ void AnnotateDisplay::rotateAntiClockwise()
 
 void AnnotateDisplay::sendPlaybackCommand(PlaybackCommand command)
 {
-  if (!playback_client_.isValid())
+  if (!playback_client_.exists() || !playback_client_.isValid())
   {
     QStringList services;
     XmlRpc::XmlRpcValue args, result, payload;
@@ -266,6 +266,10 @@ void AnnotateDisplay::sendPlaybackCommand(PlaybackCommand command)
           }
         }
       }
+    }
+    else
+    {
+      playback_client_.shutdown();
     }
   }
 }
