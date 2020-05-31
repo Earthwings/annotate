@@ -1,5 +1,9 @@
 # annotate
 
+![GitHub](https://img.shields.io/github/license/Earthwings/annotate)
+![GitHub top language](https://img.shields.io/github/languages/top/Earthwings/annotate)
+![GitHub last commit](https://img.shields.io/github/last-commit/Earthwings/annotate)
+
 The evaluation of perception algorithms requires labeled ground truth data. Supervised machine learning algorithms need labeled training data. Annotate is a tool to create 3D labeled bounding boxes in ROS/RViz. Its labeled data is useful both as training data for machine learning algorithms as well as ground truth for evaluation.
 
 ## Requirements
