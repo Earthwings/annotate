@@ -706,8 +706,6 @@ AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
     }
     pcl::PointCloud<pcl::PointXYZ> annotation_cloud;
     pcl_ros::transformPointCloud(pointcloud, annotation_cloud, trafo);
-    Vector3 points_min(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
-    Vector3 points_max(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
     if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
     {
       auto& box = marker_.controls.front().markers.front();
