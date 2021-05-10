@@ -501,9 +501,10 @@ void AnnotationMarker::shrinkTo(const PointContext& context)
     return;
   }
 
-  Stamped<Point> input(0.5 * (context.maximum + context.minimum), context.time, "current_annotation");
-  Stamped<Point> output;
-  annotate_display_->transformListener().transformPoint(marker_.header.frame_id, input, output);
+  Transform transform;
+  poseMsgToTF(marker_.pose, transform);
+  Point input(0.5 * (context.maximum + context.minimum));
+  Point output = transform * input;
   pointTFToMsg(output, marker_.pose.position);
   Vector3 const margin(padding_, padding_, padding_);
   setBoxSize(margin + context.maximum - context.minimum);
@@ -669,8 +670,6 @@ void AnnotationMarker::resize(double offset)
 
 AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
 {
-  Transform transform;
-  poseMsgToTF(marker_.pose, transform);
   auto const cloud = annotate_display_->cloud();
   PointContext context;
   if (!cloud)
@@ -678,26 +677,22 @@ AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
     return context;
   }
   context.time = min(time_, cloud->header.stamp);
-  auto const stamped_transform =
-      StampedTransform(transform, context.time, marker_.header.frame_id, "current_annotation");
-
   auto& transform_listener = annotate_display_->transformListener();
-  transform_listener.setTransform(stamped_transform);
   auto time = ros::Time();
   string error;
   for (int i = 0; i < 25; ++i)
   {
-    if (transform_listener.canTransform("current_annotation", cloud->header.frame_id, context.time, &error))
+    if (transform_listener.canTransform(marker_.header.frame_id, cloud->header.frame_id, context.time, &error))
     {
       time = context.time;
       break;
     }
     QThread::msleep(10);
   }
-  if (transform_listener.canTransform("current_annotation", cloud->header.frame_id, time, &error))
+  if (transform_listener.canTransform(marker_.header.frame_id, cloud->header.frame_id, time, &error))
   {
-    StampedTransform trafo;
-    transform_listener.lookupTransform("current_annotation", cloud->header.frame_id, time, trafo);
+    StampedTransform cloud_to_fixed;
+    transform_listener.lookupTransform(marker_.header.frame_id, cloud->header.frame_id, time, cloud_to_fixed);
     pcl::PointCloud<pcl::PointXYZ> pointcloud;
     pcl::fromROSMsg(*cloud, pointcloud);
     if (pointcloud.points.empty())
@@ -705,6 +700,9 @@ AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
       return context;
     }
     pcl::PointCloud<pcl::PointXYZ> annotation_cloud;
+    Transform fixed_to_marker;
+    poseMsgToTF(marker_.pose, fixed_to_marker);
+    Transform const trafo = fixed_to_marker.inverse() * cloud_to_fixed;
     pcl_ros::transformPointCloud(pointcloud, annotation_cloud, trafo);
     if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
     {
@@ -792,8 +790,6 @@ void AnnotationMarker::commit()
     auto& box = marker_.controls.front().markers.front();
     vector3MsgToTF(box.scale, instance.box_size);
   }
-
-  tf_broadcaster_.sendTransform(instance.center);
 
   track_.erase(
       remove_if(track_.begin(), track_.end(), [this](const TrackInstance& t) { return t.center.stamp_ == time_; }),

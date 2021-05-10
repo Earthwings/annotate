@@ -10,7 +10,6 @@
 #include <memory>
 #include <stack>
 #include <sensor_msgs/PointCloud2.h>
-#include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include <QTime>
 #include <limits>
@@ -156,7 +155,6 @@ private:
   Track track_;
   AnnotateDisplay* annotate_display_;
   ros::Time time_;
-  tf::TransformBroadcaster tf_broadcaster_;
   State state_{ Hidden };
   std::stack<UndoState> undo_stack_;
   bool ignore_ground_{ false };
