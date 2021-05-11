@@ -1,11 +1,8 @@
 #include <annotate/annotate_display.h>
 #include <annotate/annotation_marker.h>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl_ros/transforms.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/point_cloud2_iterator.h>
 #include <QColor>
 #include <QThread>
 #include <random>
@@ -368,6 +365,13 @@ void AnnotationMarker::updateDescription(const PointContext& context)
     }
     stream << ")";
   }
+
+  stream << setiosflags(ios::fixed) << setprecision(2);
+  if (!context.time_offset.isZero())
+  {
+    stream << "\ntime offset: " << context.time_offset.toSec() * 1000 << " ms";
+  }
+
   if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
   {
     auto const& box = marker_.controls.front().markers.front();
@@ -381,7 +385,6 @@ void AnnotationMarker::updateDescription(const PointContext& context)
       diff = (box_min - context.minimum).absolute() + (box_max - context.maximum).absolute();
     }
 
-    stream << setiosflags(ios::fixed) << setprecision(2);
     bool const fits_tight = (diff - Vector3(padding_, padding_, padding_)).fuzzyZero();
     if (fits_tight)
     {
@@ -672,7 +675,7 @@ AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
 {
   auto const cloud = annotate_display_->cloud();
   PointContext context;
-  if (!cloud)
+  if (!cloud || cloud->width == 0 || cloud->height == 0)
   {
     return context;
   }
@@ -689,21 +692,20 @@ AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
     }
     QThread::msleep(10);
   }
+  using namespace sensor_msgs;
   if (transform_listener.canTransform(marker_.header.frame_id, cloud->header.frame_id, time, &error))
   {
     StampedTransform cloud_to_fixed;
     transform_listener.lookupTransform(marker_.header.frame_id, cloud->header.frame_id, time, cloud_to_fixed);
-    pcl::PointCloud<pcl::PointXYZ> pointcloud;
-    pcl::fromROSMsg(*cloud, pointcloud);
-    if (pointcloud.points.empty())
-    {
-      return context;
-    }
-    pcl::PointCloud<pcl::PointXYZ> annotation_cloud;
+    auto const field_iter = find_if(cloud->fields.begin(), cloud->fields.end(), [](PointField const& field) {
+      return field.name == "timestamp" && field.count == 1 && field.datatype == PointField::FLOAT64;
+    });
+    bool const has_timestamp = field_iter != cloud->fields.end();
+    auto const num_points = cloud->width * cloud->height;
+
     Transform fixed_to_marker;
     poseMsgToTF(marker_.pose, fixed_to_marker);
     Transform const trafo = fixed_to_marker.inverse() * cloud_to_fixed;
-    pcl_ros::transformPointCloud(pointcloud, annotation_cloud, trafo);
     if (!marker_.controls.empty() && !marker_.controls.front().markers.empty())
     {
       auto& box = marker_.controls.front().markers.front();
@@ -718,9 +720,18 @@ AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
       {
         nearby_min.setZ(box_min.z());
       }
-      for (auto const& p : annotation_cloud.points)
+      PointCloud2ConstIterator<float> iter_x(*cloud, "x");
+      PointCloud2ConstIterator<float> iter_y(*cloud, "y");
+      PointCloud2ConstIterator<float> iter_z(*cloud, "z");
+      shared_ptr<PointCloud2ConstIterator<double>> iter_timestamp;
+      if (has_timestamp)
       {
-        Vector3 const point(p.x, p.y, p.z);
+        iter_timestamp = make_shared<PointCloud2ConstIterator<double>>(*cloud, "timestamp");
+      }
+      ros::Duration time_offsets;
+      for (size_t i = 0; i < num_points; ++i)
+      {
+        auto const point = trafo * Vector3(*iter_x, *iter_y, *iter_z);
         Vector3 alien = point;
         alien.setMax(nearby_min);
         alien.setMin(nearby_max);
@@ -734,12 +745,31 @@ AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
             ++context.points_inside;
             context.minimum.setMin(point);
             context.maximum.setMax(point);
+            if (has_timestamp)
+            {
+              ros::Time point_time;
+              point_time.fromNSec(**iter_timestamp);
+              time_offsets += point_time - context.time;
+            }
           }
           else
           {
             ++context.points_nearby;
           }
         }
+
+        ++iter_x;
+        ++iter_y;
+        ++iter_z;
+        if (has_timestamp)
+        {
+          ++*iter_timestamp;
+        }
+      }
+      if (has_timestamp && context.points_inside > 0)
+      {
+        auto const mean = time_offsets.toSec() / context.points_inside;
+        context.time_offset.fromSec(mean);
       }
     }
   }
@@ -766,9 +796,9 @@ void AnnotationMarker::rotateYaw(double delta_rad)
 void AnnotationMarker::commit()
 {
   pull();
+  auto const context = analyzePoints();
   if (annotate_display_->shrinkBeforeCommit())
   {
-    auto const context = analyzePoints();
     if (context.points_inside)
     {
       saveForUndo("shrink to points");
@@ -780,6 +810,7 @@ void AnnotationMarker::commit()
   TrackInstance instance;
   instance.label = label_;
   instance.tags = tags_;
+  instance.time_offset = context.time_offset;
 
   Transform transform;
   poseMsgToTF(marker_.pose, transform);

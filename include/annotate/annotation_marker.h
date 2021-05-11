@@ -24,6 +24,7 @@ struct TrackInstance
   std::vector<std::string> tags;
   tf::StampedTransform center;
   tf::Vector3 box_size;
+  ros::Duration time_offset;
 
   double timeTo(ros::Time const& time) const;
 };
@@ -91,6 +92,7 @@ private:
   struct PointContext
   {
     ros::Time time;
+    ros::Duration time_offset;
     size_t points_inside{ 0u };
     size_t points_nearby{ 0u };
     tf::Vector3 minimum{ std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
