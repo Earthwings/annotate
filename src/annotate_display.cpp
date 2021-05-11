@@ -1,9 +1,4 @@
 #include <annotate/annotate_display.h>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl_ros/transforms.h>
 #include <rviz/default_plugin/interactive_marker_display.h>
 #include <rviz/default_plugin/marker_array_display.h>
 #include <rviz/default_plugin/point_cloud2_display.h>
@@ -663,6 +658,13 @@ bool AnnotateDisplay::load(string const& file)
       instance.center.stamp_.sec = header["stamp"]["secs"].as<uint32_t>();
       instance.center.stamp_.nsec = header["stamp"]["nsecs"].as<uint32_t>();
 
+      if (inst["time_offset"])
+      {
+        Node time_offset = inst["time_offset"];
+        instance.time_offset.sec = time_offset["secs"].as<uint32_t>();
+        instance.time_offset.nsec = time_offset["nsecs"].as<uint32_t>();
+      }
+
       Node origin = inst["translation"];
       instance.center.setOrigin({ origin["x"].as<double>(), origin["y"].as<double>(), origin["z"].as<double>() });
       Node rotation = inst["rotation"];
@@ -747,6 +749,14 @@ bool AnnotateDisplay::save()
       stamp["nsecs"] = instance.center.stamp_.nsec;
       header["stamp"] = stamp;
       i["header"] = header;
+
+      if (!instance.time_offset.isZero())
+      {
+        Node time_offset;
+        time_offset["secs"] = instance.time_offset.sec;
+        time_offset["nsecs"] = instance.time_offset.nsec;
+        i["time_offset"] = time_offset;
+      }
 
       Node origin;
       auto const o = instance.center.getOrigin();
