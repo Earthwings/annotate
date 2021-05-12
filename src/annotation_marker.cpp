@@ -908,8 +908,10 @@ void AnnotationMarker::setTime(const ros::Time& time)
   time_ = time;
   if (!track_.empty())
   {
-    auto const prune_before_track_start = time < track_.front().center.stamp_ && track_.front().timeTo(time) > 1.0;
-    auto const prune_after_track_end = time > track_.back().center.stamp_ && track_.back().timeTo(time) > 1.0;
+    auto const prune_before_track_start =
+        time < track_.front().center.stamp_ && track_.front().timeTo(time) > annotate_display_->preTime();
+    auto const prune_after_track_end =
+        time > track_.back().center.stamp_ && track_.back().timeTo(time) > annotate_display_->postTime();
     if (prune_before_track_start || prune_after_track_end)
     {
       server_->erase(marker_.name);

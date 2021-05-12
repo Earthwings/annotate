@@ -47,6 +47,8 @@ public:
   bool shrinkBeforeCommit() const;
   bool autoFitAfterPointsChange() const;
   QStringList toolShortcuts() const;
+  double preTime() const;
+  double postTime() const;
 
 private Q_SLOTS:
   void updateTopic();
@@ -116,5 +118,7 @@ private:
   rviz::BoolProperty* pause_after_data_change_{ nullptr };
   rviz::FloatProperty* padding_property_{ nullptr };
   rviz::FloatProperty* margin_property_{ nullptr };
+  rviz::FloatProperty* pre_time_property_{ nullptr };
+  rviz::FloatProperty* post_time_property_{ nullptr };
 };
 }  // namespace annotate

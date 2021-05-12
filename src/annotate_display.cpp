@@ -341,6 +341,12 @@ void AnnotateDisplay::onInitialize()
                                              "considered nearby.",
                                              settings, SLOT(updateMargin()), this);
   margin_property_->setMin(0.0f);
+  pre_time_property_ = new rviz::FloatProperty(
+      "Pre Time", 1.0, "Seconds to show annotation marker before first track instance", settings);
+  pre_time_property_->setMin(0.0f);
+  post_time_property_ = new rviz::FloatProperty(
+      "Post Time", 1.0, "Seconds to show annotation marker after last track instance", settings);
+  post_time_property_->setMin(0.0f);
 
   ignore_ground_property_ = new rviz::BoolProperty("Ignore Ground", false,
                                                    "Enable to ignore the ground direction (negative z) when "
@@ -571,6 +577,16 @@ void AnnotateDisplay::updateMargin()
   {
     marker->setMargin(margin);
   }
+}
+
+double AnnotateDisplay::preTime() const
+{
+  return pre_time_property_->getFloat();
+}
+
+double AnnotateDisplay::postTime() const
+{
+  return post_time_property_->getFloat();
 }
 
 void AnnotateDisplay::updateIgnoreGround()
