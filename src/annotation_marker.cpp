@@ -747,8 +747,7 @@ AnnotationMarker::PointContext AnnotationMarker::analyzePoints() const
             context.maximum.setMax(point);
             if (has_timestamp)
             {
-              ros::Time point_time;
-              point_time.fromNSec(**iter_timestamp);
+              ros::Time point_time(**iter_timestamp);
               time_offsets += point_time - context.time;
             }
           }
